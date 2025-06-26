@@ -1,11 +1,15 @@
 using Entities;
-using Scalar;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Mapster;
-using Service.DTOs.Request;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Scalar;
+using Service.DTOs.Request;
+using System.Collections.Generic;
+using LoginRequest = Service.DTOs.Request.LoginRequest;
+using RegisterRequest = Service.DTOs.Request.RegisterRequest;
 namespace Corporate_Training_Mangment_System.Controllers
 {
     
@@ -107,6 +111,55 @@ namespace Corporate_Training_Mangment_System.Controllers
         {
             await _signInManager.SignOutAsync();
             return NoContent();
+        }
+
+        [HttpPost("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery]string userId,[FromQuery]string token)
+        {
+            var applicationUser = await _userManager.FindByIdAsync(userId);
+            if(applicationUser is not null)
+            {
+                var result = await _userManager.ConfirmEmailAsync(applicationUser, token);
+                if (result.Succeeded)
+                {
+                    return NoContent();
+                }
+                else
+                {
+                    return BadRequest(result.Errors);
+                }
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost("ResendEmail")]
+        public async Task<IActionResult> ResendEmail(ResendEmailRequest resendEmailRequest)
+        {
+            var applicationUser = await _userManager.FindByEmailAsync(resendEmailRequest.EmailOrUserName);
+            ModelStateDictionary keyValuePairs = new();
+            if (applicationUser is null) 
+                applicationUser = await _userManager.FindByNameAsync(resendEmailRequest.EmailOrUserName);
+            if(applicationUser is not null)
+            {
+                if (!applicationUser.EmailConfirmed)
+                {
+                    var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+                    var confirmationLink = Url.Action("ConfirmEmail", "Accounts", new { area = "Identity", userId = applicationUser.Id, token }, Request.Scheme);
+
+                    await _emailSender.SendEmailAsync(applicationUser!.Email??"", "Confirmation Your Account", $"Please Confirm Your Account By Clicking <a href='{confirmationLink}'>Here</a>");
+                    return NoContent();
+                }
+                else
+                {
+                    keyValuePairs.AddModelError(String.Empty, "Already confirmed!");
+                }
+            }
+            keyValuePairs.AddModelError("EmailOrUserName","Invalid Email Or User Name");
+            return BadRequest(keyValuePairs);
+
         }
     }
     }
