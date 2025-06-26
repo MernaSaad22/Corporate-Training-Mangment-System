@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Mapster;
 using Service.DTOs.Request;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 namespace Corporate_Training_Mangment_System.Controllers
 {
     
@@ -59,6 +60,53 @@ namespace Corporate_Training_Mangment_System.Controllers
 
 
             }
+        }
+
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login (LoginRequest loginRequest)
+        {
+            var applicationUser = await _userManager.FindByEmailAsync(loginRequest.EmialOrUserName);
+            ModelStateDictionary keyValuePairs = new();
+
+            if (applicationUser is null)
+                applicationUser = await _userManager.FindByNameAsync(loginRequest.EmialOrUserName);
+            if(applicationUser is not null)
+            {
+                if (applicationUser.LockoutEnabled)
+                {
+                    var result = await _userManager.CheckPasswordAsync(applicationUser, loginRequest.Password);
+                    if (result)
+                    {
+                        await _signInManager.SignInAsync(applicationUser, loginRequest.RememberMe);
+                        return NoContent();
+
+                    }
+                    else
+                    {
+                        keyValuePairs.AddModelError("EmailOrUserName","Invalid Email Or UserName");
+                        keyValuePairs.AddModelError("Password", "Invalid Password");
+                        return BadRequest(keyValuePairs);
+                    }
+                }
+                else
+                {
+                    keyValuePairs.AddModelError(string.Empty, $"Tou Have Block Untill{applicationUser.LockoutEnd}");
+                }
+            }
+            else
+            {
+                keyValuePairs.AddModelError("EmailOrUserName","Invalid Email Or UserName");
+                keyValuePairs.AddModelError("Password","Invalid Password");
+            }
+            return BadRequest(keyValuePairs);
+
+        }
+
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return NoContent();
         }
     }
     }
