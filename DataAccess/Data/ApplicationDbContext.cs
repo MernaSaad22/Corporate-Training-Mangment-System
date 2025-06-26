@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using Entities;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace DataAccess.Data
 {
@@ -14,6 +15,7 @@ namespace DataAccess.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { 
         
         }
+       
         public DbSet<Company>Compaines {  get; set; }
         public DbSet<Plan> Plans { get; set; }
         public DbSet<Assignment> Assignments { get; set; }
@@ -27,5 +29,65 @@ namespace DataAccess.Data
         public DbSet<EmployeeAssignment> EmployeeAssignments { get; set; }
       public DbSet<Employee>Employees { get; set; }
         public DbSet<Instructor> Instructors { get; set; }
+
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            // Instructor - Course
+            modelBuilder.Entity<Course>()
+                .HasOne(c => c.Instructor)
+                .WithMany()
+                .HasForeignKey(c => c.InstructorId)
+                .OnDelete(DeleteBehavior.Restrict); // ❗ مهم
+
+            // Company - Course
+            modelBuilder.Entity<Course>()
+                .HasOne(c => c.Company)
+                .WithMany(c => c.Courses)
+                .HasForeignKey(c => c.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Company - Employees
+            modelBuilder.Entity<Employee>()
+                .HasOne<ApplicationUser>(e => e.ApplicationUser)
+                .WithMany()
+                .HasForeignKey(e => e.ApplicationUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Assignment - Instructor
+            modelBuilder.Entity<Assignment>()
+                .HasOne(a => a.Instructor)
+                .WithMany()
+                .HasForeignKey(a => a.InstructorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Company - Owner User
+            modelBuilder.Entity<Company>()
+                .HasOne(c => c.ApplicationUser)
+                .WithMany()
+                .HasForeignKey(c => c.ApplicationUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Instructor - ApplicationUser
+            modelBuilder.Entity<Instructor>()
+                .HasOne(i => i.ApplicationUser)
+                .WithMany()
+                .HasForeignKey(i => i.ApplicationUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmployeeAssignment>()
+       .HasOne(ea => ea.Employee)
+       .WithMany()
+       .HasForeignKey(ea => ea.EmployeeId)
+       .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmployeeCourse>()
+       .HasOne(ec => ec.Employee)
+       .WithMany()
+       .HasForeignKey(ec => ec.EmployeeId)
+       .OnDelete(DeleteBehavior.Restrict);
+
+        }
+
     }
 }
