@@ -31,6 +31,9 @@ namespace Corporate_Training_Mangment_System.Controllers
         [HttpPost("Register")]
         public async Task<IActionResult> Register(RegisterRequest registerRequest)
         {
+
+
+
             ApplicationUser applicationUser = registerRequest.Adapt<ApplicationUser>();
 
             var result = await _userManager.CreateAsync(applicationUser, registerRequest.Password);

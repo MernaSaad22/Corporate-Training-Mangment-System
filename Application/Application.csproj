@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Corporate Training Mangment System\Corporate Training Mangment System.csproj" />
     <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
+    <ProjectReference Include="..\Entities\Entities.csproj" />
     <ProjectReference Include="..\Service\Service.csproj" />
   </ItemGroup>
 
