@@ -1,7 +1,16 @@
-using DataAccess.Data; // make sure this is added at the top
+using DataAccess.Data; 
 using Microsoft.EntityFrameworkCore;
 using DataAccess.Repository;
 using DataAccess.IRepository;
+using Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Service.Utility;
+using System.Reflection;
+using MapsterMapper;
+using Mapster;
+using Scalar;
+using Scalar.AspNetCore;
 namespace Corporate_Training_Mangment_System
 {
     public class Program
@@ -15,6 +24,12 @@ namespace Corporate_Training_Mangment_System
             {
                 option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
+
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.Password.RequiredUniqueChars = 0;
+                options.SignIn.RequireConfirmedEmail = false;
+            }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
           
@@ -34,6 +49,12 @@ namespace Corporate_Training_Mangment_System
             builder.Services.AddScoped<IEmployeeCourseRepository, EmployeeCourseRepository>();
 
             builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+            builder.Services.AddTransient<IEmailSender, EmailSender>();
+
+            var config = TypeAdapterConfig.GlobalSettings;
+            config.Scan(Assembly.GetExecutingAssembly());
+            builder.Services.AddSingleton<IMapper>(new Mapper(config));
+
 
             builder.Services.AddOpenApi();
 
@@ -43,6 +64,7 @@ namespace Corporate_Training_Mangment_System
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+                app.MapScalarApiReference();
             }
 
             app.UseHttpsRedirection();
