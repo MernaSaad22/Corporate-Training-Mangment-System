@@ -29,5 +29,7 @@ namespace Service.DTOs.Request
 
         [Required]
         public int Age { get; set; }
+        [Required]
+       public string Gender { get; set; } = null!;
     }
 }

@@ -19,6 +19,20 @@ namespace Corporate_Training_Mangment_System
         {
             var builder = WebApplication.CreateBuilder(args);
 
+
+            var MyAllowSpecificOrigins = "_myAllowSpecificOrigins"; /////
+
+
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(name: MyAllowSpecificOrigins,
+                                  policy =>
+                                  {
+                                      policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(); //any one ,any country,any methods
+                                  });
+            });
+
             // Add services to the container.
             builder.Services.AddDbContext<ApplicationDbContext>(option =>
             {
@@ -68,6 +82,8 @@ namespace Corporate_Training_Mangment_System
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors(MyAllowSpecificOrigins);
 
             app.UseAuthorization();
 
