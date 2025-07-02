@@ -11,8 +11,4 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.6" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DTOs\Response\" />
-  </ItemGroup>
-
 </Project>
