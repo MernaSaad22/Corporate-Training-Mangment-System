@@ -63,6 +63,9 @@ namespace Corporate_Training_Mangment_System
             builder.Services.AddScoped<IEmployeeCourseRepository, EmployeeCourseRepository>();
 
             builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+            //add this line to make me test CoursesController
+            builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
             builder.Services.AddTransient<IEmailSender, EmailSender>();
 
             var config = TypeAdapterConfig.GlobalSettings;
