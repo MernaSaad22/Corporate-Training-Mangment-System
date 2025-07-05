@@ -4,16 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entities
+namespace Service.DTOs.Request
 {
-    public class Employee
+    public class EmployeeRequest
     {
-        public string Id { get; set; }
         public string ApplicationUserId { get; set; }
-        public ApplicationUser ApplicationUser { get; set; }
         public string JobTitle { get; set; }
         public string CompanyId { get; set; }
-        public Company Company { get; set; }
-
     }
 }
