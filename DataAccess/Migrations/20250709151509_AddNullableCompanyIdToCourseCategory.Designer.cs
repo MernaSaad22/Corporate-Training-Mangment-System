@@ -4,6 +4,7 @@ using DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250709151509_AddNullableCompanyIdToCourseCategory")]
+    partial class AddNullableCompanyIdToCourseCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,7 +128,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("InstructorId");
 
-                    b.ToTable("Assignments", (string)null);
+                    b.ToTable("Assignments");
                 });
 
             modelBuilder.Entity("Entities.Chapter", b =>
@@ -147,7 +150,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CourseId");
 
-                    b.ToTable("Chapters", (string)null);
+                    b.ToTable("Chapters");
                 });
 
             modelBuilder.Entity("Entities.Company", b =>
@@ -175,7 +178,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("PlanId");
 
-                    b.ToTable("Compaines", (string)null);
+                    b.ToTable("Compaines");
                 });
 
             modelBuilder.Entity("Entities.Course", b =>
@@ -209,7 +212,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("InstructorId");
 
-                    b.ToTable("Courses", (string)null);
+                    b.ToTable("Courses");
                 });
 
             modelBuilder.Entity("Entities.CourseCategory", b =>
@@ -231,7 +234,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("CourseCategories", (string)null);
+                    b.ToTable("CourseCategories");
                 });
 
             modelBuilder.Entity("Entities.Employee", b =>
@@ -257,7 +260,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Employees", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("Entities.EmployeeAssignment", b =>
@@ -290,7 +293,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("EmployeeAssignments", (string)null);
+                    b.ToTable("EmployeeAssignments");
                 });
 
             modelBuilder.Entity("Entities.EmployeeCourse", b =>
@@ -323,7 +326,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("EmployeeCourses", (string)null);
+                    b.ToTable("EmployeeCourses");
                 });
 
             modelBuilder.Entity("Entities.Exam", b =>
@@ -342,7 +345,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("ChapterId")
                         .IsUnique();
 
-                    b.ToTable("Exames", (string)null);
+                    b.ToTable("Exames");
                 });
 
             modelBuilder.Entity("Entities.Instructor", b =>
@@ -362,7 +365,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.ToTable("Instructors", (string)null);
+                    b.ToTable("Instructors");
                 });
 
             modelBuilder.Entity("Entities.Lesson", b =>
@@ -388,7 +391,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ChapterId");
 
-                    b.ToTable("Lessons", (string)null);
+                    b.ToTable("Lessons");
                 });
 
             modelBuilder.Entity("Entities.Plan", b =>
@@ -411,7 +414,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Plans", (string)null);
+                    b.ToTable("Plans");
                 });
 
             modelBuilder.Entity("Entities.Question", b =>
@@ -437,7 +440,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ExamId");
 
-                    b.ToTable("Questions", (string)null);
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

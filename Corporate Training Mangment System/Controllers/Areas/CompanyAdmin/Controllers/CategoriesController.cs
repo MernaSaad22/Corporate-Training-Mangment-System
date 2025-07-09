@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.DTOs.Request;
 using Service.DTOs.Response;
+using System.Security.Claims;
 
 namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Controllers
 {
@@ -15,87 +16,226 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
     public class CategoriesController : ControllerBase
     {
         private readonly ICourseCategoryRepository _coursecategoryRepository;
-        public CategoriesController(ICourseCategoryRepository coursecategoryRepository)
+        private readonly ICompanyRepository _companyRepository;
+
+
+        public CategoriesController(ICourseCategoryRepository coursecategoryRepository,ICompanyRepository companyRepository)
         {
              _coursecategoryRepository = coursecategoryRepository;
+            _companyRepository= companyRepository;
         }
         //CourseCategory==>Name is not unique
 
         [HttpGet("")]
         public async Task<ActionResult<IEnumerable<CourseCategoruResponse>>> GetAll()
         {
-            var categories = await _coursecategoryRepository.GetAsync();
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //we dont have JWT and Authorize so i put userId manually
+            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+
+            var company =  _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company == null)
+                return Unauthorized();
+            // var categories = await _coursecategoryRepository.GetAsync();
+            var categories = await _coursecategoryRepository.GetAsync(c => c.CompanyId == company.Id);
+
 
 
             var config = new TypeAdapterConfig();
             return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
         }
 
+        //[HttpGet("{id}")]
+        //public IActionResult GetOne([FromRoute] int id)
+        //{
+        //    var category = _coursecategoryRepository.GetOne(e => e.Id == id);
+        //    if (category is not null)
+
+        //        return Ok(category.Adapt<CourseCategoruResponse>());
+
+        //    return NotFound();
+        //}
+
+
+
         [HttpGet("{id}")]
-        public IActionResult GetOne([FromRoute] int id)
+        public async Task<IActionResult> GetOne([FromRoute] int id)
         {
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+
+            if (userId is null)
+                return Unauthorized();
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company is null)
+                return Unauthorized();
+
             var category = _coursecategoryRepository.GetOne(e => e.Id == id);
-            if (category is not null)
+            if (category is null)
+                return NotFound();
 
-                return Ok(category.Adapt<CourseCategoruResponse>());
+            // 🔐 Ownership check
+            if (category.CompanyId != company.Id)
+                return Forbid();
 
-            return NotFound();
+            return Ok(category.Adapt<CourseCategoruResponse>());
         }
-        [HttpPost("")]
 
+        [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CourseCategoryRequest coursecategoryRequest)
         {
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //var userId = "1ba0cbf6-0596-4347-b001-fbd181019a38";
+            //diffrentUsers
+            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
 
+            if (userId == null)
+                return Unauthorized();
 
-            var newCategory = await _coursecategoryRepository.CreateAsync(coursecategoryRequest.Adapt<CourseCategory>());
-            if (newCategory is not null)
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company == null)
+                return Unauthorized();
+
+            var newCategory = coursecategoryRequest.Adapt<CourseCategory>();
+            newCategory.CompanyId = company.Id;
+
+            var createdCategory = await _coursecategoryRepository.CreateAsync(newCategory);
+
+            if (createdCategory != null)
             {
-                return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Categories/{newCategory.Id}", newCategory);
+                return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Categories/{createdCategory.Id}", createdCategory);
             }
             return BadRequest();
-
         }
+
+
+        //[HttpPost("")]
+
+        //public async Task<IActionResult> Create([FromBody] CourseCategoryRequest coursecategoryRequest)
+        //{
+
+        //   // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        //    //var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+        //   // if (company == null)
+        //      //  return Unauthorized();
+        //    var newCategory = await _coursecategoryRepository.CreateAsync(coursecategoryRequest.Adapt<CourseCategory>());
+        //    if (newCategory is not null)
+        //    {
+        //        return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Categories/{newCategory.Id}", newCategory);
+        //    }
+        //    return BadRequest();
+
+        //}
+
+
+        //[HttpPut("{id}")]
+
+        //public async Task<IActionResult> Edit([FromRoute] int id, [FromBody] CourseCategoryRequest coursecategoryRequest)
+        //{
+
+        //    var categoryInDB = _coursecategoryRepository.GetOne(e => e.Id == id, tracked: false);
+        //    if (categoryInDB is not null)
+        //    {
+        //        var newCourseCategoryRequest = coursecategoryRequest.Adapt<CourseCategory>();
+        //       newCourseCategoryRequest.Id = categoryInDB.Id;
+        //        var newCategory = await _coursecategoryRepository.EditAsync(newCourseCategoryRequest);
+
+        //        if (newCategory is not null)
+        //        {
+        //            return NoContent();
+        //        }
+
+        //        return BadRequest();
+
+        //    }
+        //    return NotFound();
+
+        //}
+
 
 
         [HttpPut("{id}")]
-
         public async Task<IActionResult> Edit([FromRoute] int id, [FromBody] CourseCategoryRequest coursecategoryRequest)
         {
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+
+            if (userId is null)
+                return Unauthorized();
+
+            var company =  _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company is null)
+                return Unauthorized();
 
             var categoryInDB = _coursecategoryRepository.GetOne(e => e.Id == id, tracked: false);
-            if (categoryInDB is not null)
-            {
-                var newCourseCategoryRequest = coursecategoryRequest.Adapt<CourseCategory>();
-               newCourseCategoryRequest.Id = categoryInDB.Id;
-                var newCategory = await _coursecategoryRepository.EditAsync(newCourseCategoryRequest);
+            if (categoryInDB is null)
+                return NotFound();
 
-                if (newCategory is not null)
-                {
-                    return NoContent();
-                }
+            // Check ownership
+            if (categoryInDB.CompanyId != company.Id)
+                return Forbid();
 
-                return BadRequest();
+            var updatedCategory = coursecategoryRequest.Adapt<CourseCategory>();
+            updatedCategory.Id = id;
+            updatedCategory.CompanyId = company.Id; // Ensure company ID stays the same
 
-            }
-            return NotFound();
+            var result = await _coursecategoryRepository.EditAsync(updatedCategory);
+            if (result is not null)
+                return NoContent();
 
+            return BadRequest();
         }
+
+
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> Delete([FromRoute] int id)
+        //{
+        //    var category = _coursecategoryRepository.GetOne(e => e.Id == id);
+        //    if (category is not null)
+        //    {
+        //        var deletedCategory = await _coursecategoryRepository.DeleteAsync(category);
+        //        if (deletedCategory is not null)
+        //        {
+        //            return NoContent();
+        //        }
+        //        return BadRequest();
+        //    }
+
+        //    return NotFound();
+        //}
+
+
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var category = _coursecategoryRepository.GetOne(e => e.Id == id);
-            if (category is not null)
-            {
-                var deletedCategory = await _coursecategoryRepository.DeleteAsync(category);
-                if (deletedCategory is not null)
-                {
-                    return NoContent();
-                }
-                return BadRequest();
-            }
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
 
-            return NotFound();
+            if (userId is null)
+                return Unauthorized();
+
+            var company =  _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company is null)
+                return Unauthorized();
+
+            var category = _coursecategoryRepository.GetOne(e => e.Id == id);
+            if (category is null)
+                return NotFound();
+
+            // Check ownership
+            if (category.CompanyId != company.Id)
+                return Forbid();
+
+            var deletedCategory = await _coursecategoryRepository.DeleteAsync(category);
+            if (deletedCategory is not null)
+                return NoContent();
+
+            return BadRequest();
         }
+
 
     }
 }
