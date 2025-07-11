@@ -12,6 +12,10 @@ using Mapster;
 using Scalar;
 using Scalar.AspNetCore;
 using Service.Utility.DBInitializer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.Extensions.Options;
 namespace Corporate_Training_Mangment_System
 {
     public class Program
@@ -33,6 +37,32 @@ namespace Corporate_Training_Mangment_System
                                       policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(); //any one ,any country,any methods
                                   });
             });
+
+
+            builder.Services.AddAuthentication(Options =>
+            {
+                Options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                Options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = "https://localhost:7046",
+                        ValidAudience = "https://localhost:7046",
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("Eraa##Team##project##5132025##Merna##Naira##Emad"))
+
+
+                    };
+                });
+
+
+
+
 
             // Add services to the container.
             builder.Services.AddDbContext<ApplicationDbContext>(option =>
@@ -94,6 +124,9 @@ namespace Corporate_Training_Mangment_System
             app.UseHttpsRedirection();
 
             app.UseCors(MyAllowSpecificOrigins);
+            //add authontication for JWT
+            app.UseAuthentication();
+
 
             app.UseAuthorization();
             using (var scope = app.Services.CreateScope())

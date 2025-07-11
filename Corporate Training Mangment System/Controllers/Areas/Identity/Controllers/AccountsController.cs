@@ -5,10 +5,14 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.IdentityModel.Tokens;
 using Scalar;
 using Service.DTOs.Request;
 using Service.Utility;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using LoginRequest = Service.DTOs.Request.LoginRequest;
 using RegisterRequest = Service.DTOs.Request.RegisterRequest;
 namespace Corporate_Training_Mangment_System.Controllers
@@ -134,8 +138,9 @@ namespace Corporate_Training_Mangment_System.Controllers
 
             }
         }
-
-        [HttpPost("Login")]
+        //chang httppost to httpGet ==>we use token
+        //[HttpGet("Login")]
+         [HttpPost("Login")]
         public async Task<IActionResult> Login (LoginRequest loginRequest)
         {
             var applicationUser = await _userManager.FindByEmailAsync(loginRequest.EmialOrUserName);
@@ -151,7 +156,35 @@ namespace Corporate_Training_Mangment_System.Controllers
                     if (result)
                     {
                         await _signInManager.SignInAsync(applicationUser, loginRequest.RememberMe);
-                        return NoContent();
+                        var roles=await _userManager.GetRolesAsync(applicationUser);
+
+                        var claims = new[]
+                        {
+                           
+                            new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
+                             new Claim(ClaimTypes.Name,applicationUser.UserName),
+                             new Claim(ClaimTypes.NameIdentifier,applicationUser.Id),
+                              new Claim(ClaimTypes.Role,String.Join(",",roles))
+                          
+
+                        };
+                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("Eraa##Team##project##5132025##Merna##Naira##Emad"));
+                        var creds = new SigningCredentials(key,SecurityAlgorithms.HmacSha256);
+
+                        var token = new JwtSecurityToken(
+                            issuer: "https://localhost:7046",
+                            //front project but i use localhost to test
+                            audience: "https://localhost:7046",
+                            claims:claims,
+                            //AddDays byt i use second for test now (:
+                           expires:DateTime.UtcNow.AddSeconds(15),
+                           //for final project 
+                           // expires:DateTime.UtcNow.AddDays(15),
+                            signingCredentials: creds
+
+
+                            );
+                        return Ok(new JwtSecurityTokenHandler().WriteToken(token));
 
                     }
                     else
