@@ -1,5 +1,6 @@
 ﻿using DataAccess.IRepository;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.DTOs.Response;
@@ -9,6 +10,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
     [Area("Admin")]
     [Route("api/[area]/[controller]")]
     [ApiController]
+    [Authorize(Roles = "SuperAdmin")]
     public class RolesController : ControllerBase
     {
         private readonly IRoleRepository _roleRepository;

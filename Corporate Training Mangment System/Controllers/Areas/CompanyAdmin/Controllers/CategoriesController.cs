@@ -2,6 +2,7 @@
 using DataAccess.Repository;
 using Entities;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.DTOs.Request;
@@ -13,6 +14,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
     [Area("CompanyAdmin")]
     [Route("api/[area]/[controller]")]
     [ApiController]
+    [Authorize(Roles = "CompanyAdmin")]
     public class CategoriesController : ControllerBase
     {
         private readonly ICourseCategoryRepository _coursecategoryRepository;
@@ -26,24 +28,48 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         }
         //CourseCategory==>Name is not unique
 
+
+        //manually test
+        //[HttpGet("")]
+        //public async Task<ActionResult<IEnumerable<CourseCategoruResponse>>> GetAll()
+        //{
+        //    //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    //we dont have JWT and Authorize so i put userId manually
+        //    var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+
+        //    var company =  _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+        //    if (company == null)
+        //        return Unauthorized();
+        //    // var categories = await _coursecategoryRepository.GetAsync();
+        //    var categories = await _coursecategoryRepository.GetAsync(c => c.CompanyId == company.Id);
+
+
+
+        //    var config = new TypeAdapterConfig();
+        //    return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
+        //}
+
+//NOT WORK ):
+
         [HttpGet("")]
         public async Task<ActionResult<IEnumerable<CourseCategoruResponse>>> GetAll()
         {
-            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            //we dont have JWT and Authorize so i put userId manually
-            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Console.WriteLine("UserId: " + userId);
 
-            var company =  _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (userId is null)
+                return Unauthorized();
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company == null)
                 return Unauthorized();
-            // var categories = await _coursecategoryRepository.GetAsync();
+
             var categories = await _coursecategoryRepository.GetAsync(c => c.CompanyId == company.Id);
-
-
-
-            var config = new TypeAdapterConfig();
             return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
         }
+
+
+
 
         //[HttpGet("{id}")]
         //public IActionResult GetOne([FromRoute] int id)

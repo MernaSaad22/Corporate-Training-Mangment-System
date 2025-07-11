@@ -1,6 +1,7 @@
 ﻿using DataAccess.IRepository;
 using Entities;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
     [Area("Admin")]
     [Route("api/[area]/[controller]")]
     [ApiController]
+    [Authorize(Roles = "SuperAdmin")]
     public class PlansController : ControllerBase
     {
 
