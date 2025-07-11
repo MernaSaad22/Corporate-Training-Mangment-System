@@ -67,6 +67,74 @@ namespace Corporate_Training_Mangment_System.Controllers
             }
         }
 
+
+        [HttpPost("RegisterInstructor")]
+        public async Task<IActionResult> RegisterInstructor(RegisterRequest registerRequest)
+        {
+
+
+
+            ApplicationUser applicationUser = registerRequest.Adapt<ApplicationUser>();
+
+            var result = await _userManager.CreateAsync(applicationUser, registerRequest.Password);
+
+            if (result.Succeeded)
+            {
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+
+                var confirmationLink = Url.Action("ConfirmEmail", "Accounts", new { area = "Identity", userId = applicationUser.Id, token }, Request.Scheme);
+
+                await _emailSender.SendEmailAsync(registerRequest.Email, "Confirmation Your Account", $"Please Confirm Your Account By Clicking <a href='{confirmationLink}'>Here</a>");
+
+                //until we add a payment way
+                await _userManager.AddToRoleAsync(applicationUser, SD.Instructor);
+
+                return Created();
+            }
+            else
+            {
+
+                return BadRequest(result.Errors);
+
+
+
+            }
+        }
+
+
+        [HttpPost("RegisterEmployee")]
+        public async Task<IActionResult> RegisterEmployee(RegisterRequest registerRequest)
+        {
+
+
+
+            ApplicationUser applicationUser = registerRequest.Adapt<ApplicationUser>();
+
+            var result = await _userManager.CreateAsync(applicationUser, registerRequest.Password);
+
+            if (result.Succeeded)
+            {
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+
+                var confirmationLink = Url.Action("ConfirmEmail", "Accounts", new { area = "Identity", userId = applicationUser.Id, token }, Request.Scheme);
+
+                await _emailSender.SendEmailAsync(registerRequest.Email, "Confirmation Your Account", $"Please Confirm Your Account By Clicking <a href='{confirmationLink}'>Here</a>");
+
+                //until we add a payment way
+                await _userManager.AddToRoleAsync(applicationUser, SD.Employee);
+
+                return Created();
+            }
+            else
+            {
+
+                return BadRequest(result.Errors);
+
+
+
+            }
+        }
+
         [HttpPost("Login")]
         public async Task<IActionResult> Login (LoginRequest loginRequest)
         {
