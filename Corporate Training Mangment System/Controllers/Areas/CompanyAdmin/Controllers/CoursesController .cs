@@ -1,4 +1,5 @@
 ﻿using DataAccess.IRepository;
+using DataAccess.Repository;
 using Entities;
 using Mapster;
 using Microsoft.AspNetCore.Http;
@@ -15,10 +16,17 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
     public class CoursesController : ControllerBase
     {
         private readonly IRepository<Course> _courseRepository;
+        private readonly IRepository<Instructor> _instructorRepository;
+        private readonly IRepository<CourseCategory> _courseCategoryRepository;
+        private readonly IRepository<Company> _companyRepository;
 
-        public CoursesController(IRepository<Course> courseRepository)
+        public CoursesController(IRepository<Course> courseRepository,IRepository<Instructor> instructorRepository,
+            IRepository<CourseCategory> courseCategoryRepository,IRepository<Company> companyRepository)
         {
             _courseRepository = courseRepository;
+            this._instructorRepository = instructorRepository;
+            this._courseCategoryRepository = courseCategoryRepository;
+            this._companyRepository = companyRepository;
         }
 
         [HttpGet]
@@ -47,11 +55,24 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CourseRequest request)
         {
+           
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var course = request.Adapt<Course>();
+            //check before creating 
+            var instructor = _instructorRepository.GetOne(i => i.Id == request.InstructorId);
+            if (instructor == null)
+                return BadRequest("Instructor not found.");
 
+            var category = _courseCategoryRepository.GetOne(c => c.Id == request.CategoryId);
+            if (category == null)
+                return BadRequest("Category not found.");
+
+            var company = _companyRepository.GetOne(c => c.Id == request.CompanyId);
+            if (company == null)
+                return BadRequest("Company not found.");
+
+            var course = request.Adapt<Course>();
             var created = await _courseRepository.CreateAsync(course);
             if (created == null)
                 return BadRequest("Failed to create course.");
@@ -59,6 +80,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var response = created.Adapt<CourseResponse>();
             return CreatedAtAction(nameof(GetOne), new { id = created.Id }, response);
         }
+
 
         // PUT: api/CompanyAdmin/Courses/5
         [HttpPut("{id}")]
