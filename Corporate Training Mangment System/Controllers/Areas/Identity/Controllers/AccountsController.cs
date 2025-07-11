@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Scalar;
 using Service.DTOs.Request;
+using Service.Utility;
 using System.Collections.Generic;
 using LoginRequest = Service.DTOs.Request.LoginRequest;
 using RegisterRequest = Service.DTOs.Request.RegisterRequest;
@@ -51,8 +52,8 @@ namespace Corporate_Training_Mangment_System.Controllers
 
                 await _emailSender.SendEmailAsync(registerRequest.Email, "Confirmation Your Account", $"Please Confirm Your Account By Clicking <a href='{confirmationLink}'>Here</a>");
 
-
-               // await _userManager.AddToRoleAsync(applicationUser, SD.Customer);
+                //until we add a payment way
+                await _userManager.AddToRoleAsync(applicationUser, SD.CompanyAdmin);
 
                 return Created();
             }

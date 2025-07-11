@@ -11,6 +11,7 @@ using MapsterMapper;
 using Mapster;
 using Scalar;
 using Scalar.AspNetCore;
+using Service.Utility.DBInitializer;
 namespace Corporate_Training_Mangment_System
 {
     public class Program
@@ -63,6 +64,12 @@ namespace Corporate_Training_Mangment_System
             builder.Services.AddScoped<IEmployeeCourseRepository, EmployeeCourseRepository>();
 
             builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+            builder.Services.AddScoped<IDBInitializer, DBInitializer>();
+
+
             //add this line to make me test CoursesController
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
@@ -89,6 +96,11 @@ namespace Corporate_Training_Mangment_System
             app.UseCors(MyAllowSpecificOrigins);
 
             app.UseAuthorization();
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbInitializer = scope.ServiceProvider.GetRequiredService<IDBInitializer>();
+                dbInitializer.Initilize();
+            }
 
 
             app.MapControllers();
