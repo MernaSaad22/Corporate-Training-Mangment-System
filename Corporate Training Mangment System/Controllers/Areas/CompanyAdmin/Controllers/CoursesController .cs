@@ -2,6 +2,7 @@
 using DataAccess.Repository;
 using Entities;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.DTOs.Request;
@@ -13,6 +14,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
     [Area("CompanyAdmin")]
     [Route("api/[area]/[controller]")]
     [ApiController]
+    [Authorize(Roles = "CompanyAdmin")]
     public class CoursesController : ControllerBase
     {
         private readonly IRepository<Course> _courseRepository;
@@ -38,7 +40,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             return Ok(courses.Adapt<IEnumerable<CourseResponse>>());
         }
 
-        // GET: api/CompanyAdmin/Courses/5
+  
         [HttpGet("{id}")]
         public IActionResult GetOne([FromRoute] int id)
         {
@@ -51,7 +53,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             return Ok(course.Adapt<CourseResponse>());
         }
 
-        // POST: api/CompanyAdmin/Courses
+      
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CourseRequest request)
         {
@@ -59,7 +61,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            //check before creating 
+    
             var instructor = _instructorRepository.GetOne(i => i.Id == request.InstructorId);
             if (instructor == null)
                 return BadRequest("Instructor not found.");
@@ -82,7 +84,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         }
 
 
-        // PUT: api/CompanyAdmin/Courses/5
+    
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit([FromRoute] int id, [FromBody] CourseRequest request)
         {
@@ -92,7 +94,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var existingCourse = _courseRepository.GetOne(c => c.Id == id);
             if (existingCourse == null) return NotFound();
 
-            // Update fields
+        
             existingCourse.Title = request.Title;
             existingCourse.CompanyId = request.CompanyId;
             existingCourse.InstructorId = request.InstructorId;
@@ -105,7 +107,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             return Ok(updated.Adapt<CourseResponse>());
         }
 
-        // DELETE: api/CompanyAdmin/Courses/5
+ 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {

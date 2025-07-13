@@ -12,5 +12,8 @@ namespace Entities
         public string ApplicationUserId { get; set; }
         public ApplicationUser ApplicationUser { get; set; }
         public string Specialization { get; set; }
+
+        public string? CompanyId { get; set; } 
+        public Company ?Company { get; set; } 
     }
 }

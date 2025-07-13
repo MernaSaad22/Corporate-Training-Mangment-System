@@ -11,5 +11,8 @@ namespace Service.DTOs.Response
         public string Id { get; set; } = null!;
         public string Specialization { get; set; } = null!;
         public string FullName { get; set; } = null!; //UserName
+
+        public string ApplicationUserId { get; set; } = null!;
+        public string CompanyId { get; set; } = null!;
     }
 }

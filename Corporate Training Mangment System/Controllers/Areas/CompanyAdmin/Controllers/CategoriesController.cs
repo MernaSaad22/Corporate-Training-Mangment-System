@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.DTOs.Request;
 using Service.DTOs.Response;
+using System.Diagnostics;
 using System.Security.Claims;
 
 namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Controllers
@@ -49,13 +50,13 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         //    return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
         //}
 
-//NOT WORK ):
+        //NOT WORK ):====>finally worked
 
         [HttpGet("")]
         public async Task<ActionResult<IEnumerable<CourseCategoruResponse>>> GetAll()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            Console.WriteLine("UserId: " + userId);
+            //Console.WriteLine("UserId: " + userId);
 
             if (userId is null)
                 return Unauthorized();
@@ -68,6 +69,36 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
         }
 
+
+       
+
+
+        // worked code to catch error message
+        //when we register as company we need to add applicationuser from createcompany as SuperAdmin first
+
+        //[HttpGet]
+        //public async Task<ActionResult<IEnumerable<CourseCategoruResponse>>> GetAll()
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(userId))
+        //    {
+        //        return Unauthorized("User ID not found in token");
+        //    }
+
+        //    var company =  _companyRepository.GetOne(c =>
+        //        c.ApplicationUserId != null &&
+        //        c.ApplicationUserId.Equals(userId));
+
+        //    if (company == null)
+        //    {
+        //        return Unauthorized($"No company found for user ID: {userId}");
+        //    }
+
+        //    var categories = await _coursecategoryRepository.GetAsync(
+        //        c => c.CompanyId == company.Id);
+
+        //    return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
+        //}
 
 
 
@@ -87,8 +118,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOne([FromRoute] int id)
         {
-            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
 
             if (userId is null)
                 return Unauthorized();
@@ -111,10 +142,10 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CourseCategoryRequest coursecategoryRequest)
         {
-            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             //var userId = "1ba0cbf6-0596-4347-b001-fbd181019a38";
             //diffrentUsers
-            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+            //var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
 
             if (userId == null)
                 return Unauthorized();
@@ -185,8 +216,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit([FromRoute] int id, [FromBody] CourseCategoryRequest coursecategoryRequest)
         {
-            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
 
             if (userId is null)
                 return Unauthorized();
@@ -237,8 +268,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
 
             if (userId is null)
                 return Unauthorized();
