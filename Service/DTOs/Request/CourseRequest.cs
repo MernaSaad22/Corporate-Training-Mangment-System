@@ -9,9 +9,16 @@ namespace Service.DTOs.Request
     public class CourseRequest
     {
 
-        public string Title { get; set; } = null!;
-        public string CompanyId { get; set; } = null!;
-        public string InstructorId { get; set; } = null!;
-        public int CategoryId { get; set; }
-    }
+        //public string Title { get; set; } = null!;
+        //public string CompanyId { get; set; } = null!;
+        //public string InstructorId { get; set; } = null!;
+        //public int CategoryId { get; set; }
+
+     
+            public string Title { get; set; } = null!;
+            public string InstructorId { get; set; } = null!;
+            public int CategoryId { get; set; }
+        }
+
+    
 }

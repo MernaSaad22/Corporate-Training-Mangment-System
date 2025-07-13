@@ -216,6 +216,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
 
 
+
+
         //i want to solve null fullname but not solver ):
         //[HttpPost("")]
         //public async Task<IActionResult> Create([FromBody] InstructorRequest instructorRequest)

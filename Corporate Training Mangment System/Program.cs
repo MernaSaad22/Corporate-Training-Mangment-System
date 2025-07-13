@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.Extensions.Options;
+using Service.DTOs.Response;
 namespace Corporate_Training_Mangment_System
 {
     public class Program
@@ -107,6 +108,14 @@ namespace Corporate_Training_Mangment_System
 
             var config = TypeAdapterConfig.GlobalSettings;
             config.Scan(Assembly.GetExecutingAssembly());
+            //add this to view instructorname in course but not work
+            //config.ForType<Course, CourseResponse>()
+            //.Map(dest => dest.InstructorUserName,
+            //src => src.Instructor != null && src.Instructor.ApplicationUser != null
+            // ? src.Instructor.ApplicationUser.UserName
+            // : string.Empty);
+
+
             builder.Services.AddSingleton<IMapper>(new Mapper(config));
 
 

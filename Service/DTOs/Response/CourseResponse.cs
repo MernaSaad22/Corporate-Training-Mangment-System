@@ -13,5 +13,7 @@ namespace Service.DTOs.Response
         public string CompanyId { get; set; } = null!;
         public string InstructorId { get; set; } = null!;
         public int CategoryId { get; set; }
+
+        //public string InstructorUserName { get; set; } = null!;
     }
 }
