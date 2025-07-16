@@ -129,6 +129,39 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         //}
 
 
+
+        //No limit for course number <=maxcourses in the plan 
+        //[HttpPost]
+        //public async Task<IActionResult> Create([FromBody] CourseRequest request)
+        //{
+        //    if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (userId is null) return Unauthorized();
+
+        //    var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+        //    if (company is null) return Unauthorized();
+
+        //    var instructor = _instructorRepository.GetOne(i => i.Id == request.InstructorId);
+        //    if (instructor is null || instructor.CompanyId != company.Id)
+        //        return BadRequest("Instructor not found or does not belong to your company.");
+
+        //    var category = _courseCategoryRepository.GetOne(c => c.Id == request.CategoryId);
+        //    if (category is null || category.CompanyId != company.Id)
+        //        return BadRequest("Category not found or does not belong to your company.");
+
+        //    var course = request.Adapt<Course>();
+        //    course.CompanyId = company.Id;
+
+        //    var created = await _courseRepository.CreateAsync(course);
+        //    if (created is null) return BadRequest("Failed to create course.");
+
+        //    return CreatedAtAction(nameof(GetOne), new { id = created.Id }, created.Adapt<CourseResponse>());
+        //}
+
+
+
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CourseRequest request)
         {
@@ -137,17 +170,30 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId is null) return Unauthorized();
 
-            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            var company = _companyRepository.GetOne(
+                c => c.ApplicationUserId == userId,
+                includes: new Expression<Func<Company, object>>[] { c => c.Plan });
+
             if (company is null) return Unauthorized();
 
+            // Check if course limit is reached
+            var existingCourses = await _courseRepository.GetAsync(c => c.CompanyId == company.Id);
+            int courseCount = existingCourses.Count();
+
+            if (courseCount >= company.Plan.MaxCourses)
+                return BadRequest($"Course limit reached. Your current plan allows up to {company.Plan.MaxCourses} courses.");
+           
+            // Validate Instructor
             var instructor = _instructorRepository.GetOne(i => i.Id == request.InstructorId);
             if (instructor is null || instructor.CompanyId != company.Id)
                 return BadRequest("Instructor not found or does not belong to your company.");
 
+            // Validate Category
             var category = _courseCategoryRepository.GetOne(c => c.Id == request.CategoryId);
             if (category is null || category.CompanyId != company.Id)
                 return BadRequest("Category not found or does not belong to your company.");
 
+            // Create Course
             var course = request.Adapt<Course>();
             course.CompanyId = company.Id;
 
@@ -156,6 +202,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             return CreatedAtAction(nameof(GetOne), new { id = created.Id }, created.Adapt<CourseResponse>());
         }
+
 
 
 
