@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,5 +15,12 @@ namespace Entities
 
         public int ChapterId { get; set; }
         public Chapter Chapter { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int Order { get; set; }
+        public string? VideoFileName { get; set; }
+        public string? VideoUrl { get; set; }
+        public TimeSpan? Duration { get; set; }
+
+
     }
 }

@@ -16,5 +16,6 @@ namespace Entities
 
         public ICollection<Lesson> Lessons { get; set; }
         public Exam Exam { get; set; }
+        public int Order { get; set; }
     }
 }

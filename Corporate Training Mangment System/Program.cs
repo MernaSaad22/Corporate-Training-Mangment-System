@@ -85,7 +85,9 @@ namespace Corporate_Training_Mangment_System
             builder.Services.AddScoped<IPlanRepository, PlanRepository>();
             builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
             builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
-            builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+            //builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+            builder.Services.AddScoped<IRepository<Course>, CourseRepository>();
+
             builder.Services.AddScoped<ICourseCategoryRepository, CourseCategoryRepository>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();

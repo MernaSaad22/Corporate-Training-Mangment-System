@@ -3,6 +3,7 @@ using DataAccess.IRepository;
 using DataAccess.Repository;
 using Entities;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
     [Area("CompanyAdmin")]
     [Route("api/[area]/[controller]")]
     [ApiController]
+    [Authorize(Roles = "CompanyAdmin")]
+
     public class EmployeesController : ControllerBase
     {
         private readonly IRepository<Employee> _employeeRepository;
@@ -28,18 +31,22 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             this._userManager = userManager;
         }
 
-        [HttpGet("by-company/{companyId}")]
-        public async Task<ActionResult<IEnumerable<EmployeeResponse>>> GetByCompany(string companyId)
+        
+        [HttpGet("my-employees")]
+        public async Task<ActionResult<IEnumerable<EmployeeResponse>>> GetByCompany()
         {
-            var company = _companyRepository.GetOne(c => c.Id == companyId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found in token.");
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company == null)
-                return NotFound("Company not found.");
+                return Unauthorized("Company not found for this user.");
 
             var employees = await _employeeRepository.GetAsync(
                 e => e.CompanyId == company.Id,
                 includes: [e => e.ApplicationUser, e => e.Company]);
 
-            // ✨ Mapster config علشان UserName و Name
             TypeAdapterConfig<Employee, EmployeeResponse>.NewConfig()
                 .Map(dest => dest.UserName, src => src.ApplicationUser.UserName ?? "")
                 .Map(dest => dest.CompanyId, src => src.CompanyId);
@@ -49,16 +56,25 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<EmployeeResponse>> GetOne([FromRoute] string id, [FromQuery] string companyId)
+        public async Task<ActionResult<EmployeeResponse>> GetOne([FromRoute] string id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found in token.");
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company == null)
+                return Unauthorized("Company not found for this user.");
+
             var employee = _employeeRepository.GetOne(
-                e => e.Id == id && e.CompanyId == companyId,
+                e => e.Id == id && e.CompanyId == company.Id,
                 includes: [e => e.ApplicationUser, e => e.Company]);
 
-            if (employee is null) return NotFound();
+            if (employee is null)
+                return NotFound();
 
             TypeAdapterConfig<Employee, EmployeeResponse>.NewConfig()
-                .Map(dest => dest.UserName, src => src.ApplicationUser.UserName??"")
+                .Map(dest => dest.UserName, src => src.ApplicationUser.UserName ?? "")
                 .Map(dest => dest.CompanyId, src => src.CompanyId);
 
             return Ok(employee.Adapt<EmployeeResponse>());
@@ -68,20 +84,24 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] EmployeeRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found in token.");
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company is null)
+                return Unauthorized("Company not found for this user.");
+
             var user = await _userManager.FindByIdAsync(request.ApplicationUserId);
             if (user is null)
                 return BadRequest("User not found.");
-
-            var company = _companyRepository.GetOne(c => c.Id == request.CompanyId);
-            if (company is null)
-                return BadRequest("Company not found.");
 
             var employee = new Employee
             {
                 Id = Guid.NewGuid().ToString(),
                 ApplicationUserId = user.Id,
                 ApplicationUser = user,
-                CompanyId = request.CompanyId,
+                CompanyId = company.Id,
                 Company = company,
                 JobTitle = request.JobTitle
             };
@@ -100,44 +120,66 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             };
 
             return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Employees/{response.Id}", response);
-
-
         }
 
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit([FromRoute] string id, [FromBody] EmployeeRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found in token.");
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company == null)
+                return Unauthorized("Company not found for this user.");
+
             var employeeInDb = _employeeRepository.GetOne(
-                e => e.Id == id,
-                includes: [e => e.ApplicationUser, e => e.Company]); 
+                e => e.Id == id && e.CompanyId == company.Id,
+                includes: [e => e.ApplicationUser, e => e.Company]);
 
-            if (employeeInDb is null) return NotFound();
+            if (employeeInDb is null)
+                return NotFound();
 
-            request.Adapt(employeeInDb);
-            employeeInDb.Id = id;
+            employeeInDb.JobTitle = request.JobTitle;
+            employeeInDb.ApplicationUserId = request.ApplicationUserId;
 
             var updated = await _employeeRepository.EditAsync(employeeInDb);
-            if (updated is null) return BadRequest();
+            if (updated is null)
+                return BadRequest();
 
-            TypeAdapterConfig<Employee, EmployeeResponse>.NewConfig()
-               .Map(dest => dest.UserName, src => src.ApplicationUser.UserName ?? "")
-               .Map(dest => dest.CompanyId, src => src.CompanyId);
+            var response = new EmployeeResponse
+            {
+                Id = updated.Id,
+                JobTitle = updated.JobTitle,
+                CompanyId = updated.CompanyId,
+                ApplicationUserId = updated.ApplicationUserId,
+                UserName = updated.ApplicationUser?.UserName ?? ""
+            };
 
-            return Ok(updated.Adapt<EmployeeResponse>()); 
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] string id)
         {
-            var employee = _employeeRepository.GetOne(e => e.Id == id);
-            if (employee is null) return NotFound();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found in token.");
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company is null)
+                return Unauthorized("Company not found for this user.");
+
+            var employee = _employeeRepository.GetOne(e => e.Id == id && e.CompanyId == company.Id);
+            if (employee is null) return NotFound("Employee not found or does not belong to your company.");
 
             var deleted = await _employeeRepository.DeleteAsync(employee);
-            if (deleted is null) return BadRequest();
+            if (deleted is null) return BadRequest("Failed to delete employee.");
 
             return NoContent();
         }
+
 
     }
 }
