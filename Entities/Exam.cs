@@ -9,6 +9,8 @@ namespace Entities
     public class Exam
     {
         public int Id { get; set; }
+        public string Title { get; set; }
+        public DateTime Deadline { get; set; }
 
         public int ChapterId { get; set; }
         public Chapter Chapter { get; set; }

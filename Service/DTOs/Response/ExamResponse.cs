@@ -12,7 +12,7 @@ namespace Service.DTOs.Response
 
         public int ChapterId { get; set; }
         public string ChapterTitle { get; set; }
-
         public int TotalQuestions { get; set; }
+
     }
 }

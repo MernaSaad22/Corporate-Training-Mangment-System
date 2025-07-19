@@ -30,26 +30,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             this._companyRepository = companyRepository;
         }
 
-        //[HttpGet]
-        //public async Task<ActionResult<IEnumerable<LessonResponse>>> GetAll()
-        //{
-        //    var lessons = await _lessonRepository.GetAsync(includes: [l => l.Chapter]);
-        //    return Ok(lessons.Adapt<IEnumerable<LessonResponse>>());
-        //}
-
-        //[HttpGet("by-course/{courseId}")]
-        //public async Task<ActionResult<IEnumerable<LessonResponse>>> GetLessonsByCourse(int courseId)
-        //{
-        //    var lessons = await _lessonRepository.GetAsync(
-        //        expression: l => l.Chapter.CourseId == courseId,
-        //        includes: new Expression<Func<Lesson, object>>[]
-        //        {
-        //    l => l.Chapter
-        //        }
-        //    );
-
-        //    return Ok(lessons.Adapt<IEnumerable<LessonResponse>>());
-        //}
+       
         [HttpGet("by-course/{courseId}")]
         public async Task<ActionResult<IEnumerable<LessonResponse>>> GetLessonsByCourse(int courseId)
         {
@@ -71,19 +52,6 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         }
 
 
-
-
-        //[HttpGet("{id}")]
-        //public IActionResult GetOne([FromRoute] int id)
-        //{
-        //    var lesson = _lessonRepository.GetOne(
-        //        l => l.Id == id,
-        //        includes: [l => l.Chapter]);
-
-        //    if (lesson is null) return NotFound();
-
-        //    return Ok(lesson.Adapt<LessonResponse>());
-        //}
 
         [HttpGet("{id}")]
         public IActionResult GetOne([FromRoute] int id)
