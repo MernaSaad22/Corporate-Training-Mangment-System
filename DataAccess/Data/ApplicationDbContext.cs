@@ -87,7 +87,18 @@ namespace DataAccess.Data
        .HasForeignKey(ec => ec.EmployeeId)
        .OnDelete(DeleteBehavior.Restrict);
 
+
+            modelBuilder.Entity<Plan>()
+    .Property(p => p.Cost)
+    .HasPrecision(18, 2); // Use 18,2 for money-like values
+
+
         }
+
+
+
+
+
 
     }
 }

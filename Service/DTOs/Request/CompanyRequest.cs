@@ -18,7 +18,8 @@ namespace Service.DTOs.Request
         public IFormFile? Logo { get; set; }
 
         public string ApplicationUserId { get; set; }//owner
-      
-       
+
+        public DateTime TransactionDate { get; set; }
+
     }
 }

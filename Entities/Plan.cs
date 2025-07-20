@@ -13,6 +13,9 @@ namespace Entities
         public int MaxCourses { get; set; }
         public int MaxEmployees { get; set; }
 
+        public decimal Cost { get; set; } 
+        public int DurationInDays { get; set; } 
+
         public ICollection<Company> Companies { get; set; }
     }
 }

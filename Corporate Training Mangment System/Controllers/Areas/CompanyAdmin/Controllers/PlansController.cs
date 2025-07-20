@@ -41,5 +41,59 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             return Ok(response);
         }
 
+
+        [HttpGet("PlanDetails")]
+        public IActionResult GetDetailsMyPlan()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId is null)
+                return Unauthorized();
+
+            var company = _companyRepository.GetOne(
+                c => c.ApplicationUserId == userId,
+                includes: new Expression<Func<Company, object>>[] { c => c.Plan });
+
+            if (company is null || company.Plan is null)
+                return NotFound("Company or plan not found.");
+
+            var response = company.Plan.Adapt<PlanCompanyDetailsResponse>();
+            response.StartDate = company.StartDate;
+            response.EndDate = company.EndDate;
+
+            if (company.EndDate.HasValue)
+            {
+                var remaining = (company.EndDate.Value - DateTime.Now).Days;
+
+                response.DaysRemaining = remaining > 0 ? remaining : 0;
+
+                if (remaining <= 0)
+                {
+                    response.IsExpired = true;
+                    response.StatusMessage = "Your plan has expired.";
+                }
+                else if (remaining <= 3)
+                {
+                    response.IsExpired = false;
+                    response.StatusMessage = $"Your plan is expiring in {remaining} day(s).";
+                }
+                else
+                {
+                    response.IsExpired = false;
+                    response.StatusMessage = $"Your plan is active. {remaining} day(s) remaining.";
+                }
+            }
+            else
+            {
+                response.IsExpired = true;
+                response.StatusMessage = "Plan dates are missing.";
+            }
+
+            return Ok(response);
+        }
+
+
+
+
+
     }
 }
