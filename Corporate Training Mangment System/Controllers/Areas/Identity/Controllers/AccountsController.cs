@@ -143,11 +143,11 @@ namespace Corporate_Training_Mangment_System.Controllers
          [HttpPost("Login")]
         public async Task<IActionResult> Login (LoginRequest loginRequest)
         {
-            var applicationUser = await _userManager.FindByEmailAsync(loginRequest.EmialOrUserName);
+            var applicationUser = await _userManager.FindByEmailAsync(loginRequest.EmailOrUserName);
             ModelStateDictionary keyValuePairs = new();
 
             if (applicationUser is null)
-                applicationUser = await _userManager.FindByNameAsync(loginRequest.EmialOrUserName);
+                applicationUser = await _userManager.FindByNameAsync(loginRequest.EmailOrUserName);
             if(applicationUser is not null)
             {
                 if (applicationUser.LockoutEnabled)
@@ -184,7 +184,12 @@ namespace Corporate_Training_Mangment_System.Controllers
 
 
                             );
-                        return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+                        return Ok(new
+                        {
+                            token = new JwtSecurityTokenHandler().WriteToken(token),
+                            role = roles.FirstOrDefault(),
+                            username = applicationUser.UserName
+                        });
 
                     }
                     else

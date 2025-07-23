@@ -25,11 +25,11 @@ namespace Service.DTOs.Request
         [Compare(nameof(Password))]
         public string ConfirmPassword { get; set; } = null!;
 
-        public string? Address { get; set; }
+       // public string? Address { get; set; }
 
-        [Required]
-        public int Age { get; set; }
-        [Required]
-       public string Gender { get; set; } = null!;
+       // [Required]
+       // public int Age { get; set; }
+       // [Required]
+       //public string Gender { get; set; } = null!;
     }
 }
