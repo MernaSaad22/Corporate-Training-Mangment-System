@@ -93,6 +93,12 @@ namespace DataAccess.Data
     .HasPrecision(18, 2); // Use 18,2 for money-like values
 
 
+
+            modelBuilder.Entity<Assignment>()
+    .HasOne(a => a.Lesson)
+    .WithMany(l => l.Assignments)
+    .HasForeignKey(a => a.LessonId)
+    .OnDelete(DeleteBehavior.Restrict);
         }
 
 

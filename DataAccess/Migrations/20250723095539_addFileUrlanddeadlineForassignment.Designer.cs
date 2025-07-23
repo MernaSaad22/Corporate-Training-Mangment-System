@@ -4,6 +4,7 @@ using DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250723095539_addFileUrlanddeadlineForassignment")]
+    partial class addFileUrlanddeadlineForassignment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -121,9 +124,6 @@ namespace DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("LessonId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -133,8 +133,6 @@ namespace DataAccess.Migrations
                     b.HasIndex("CourseId");
 
                     b.HasIndex("InstructorId");
-
-                    b.HasIndex("LessonId");
 
                     b.ToTable("Assignments");
                 });
@@ -641,17 +639,9 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Entities.Lesson", "Lesson")
-                        .WithMany("Assignments")
-                        .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Course");
 
                     b.Navigation("Instructor");
-
-                    b.Navigation("Lesson");
                 });
 
             modelBuilder.Entity("Entities.Chapter", b =>
@@ -913,11 +903,6 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("Entities.Exam", b =>
                 {
                     b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("Entities.Lesson", b =>
-                {
-                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("Entities.Plan", b =>
