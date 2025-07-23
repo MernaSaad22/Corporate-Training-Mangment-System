@@ -4,19 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entities
+namespace Service.DTOs.Request
 {
-    public class Exam
+    public class ExamCreateRequest
     {
-        public int Id { get; set; }
         public string Title { get; set; }
         public DateTime Deadline { get; set; }
-
         public int ChapterId { get; set; }
-        public Chapter Chapter { get; set; }
 
-        public ICollection<Question> Questions { get; set; }
-
-
+        public List<QuestionCreateRequest> Questions { get; set; } = new();
     }
 }

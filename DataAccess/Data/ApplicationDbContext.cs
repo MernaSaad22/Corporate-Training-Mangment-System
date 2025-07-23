@@ -99,6 +99,14 @@ namespace DataAccess.Data
     .WithMany(l => l.Assignments)
     .HasForeignKey(a => a.LessonId)
     .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<Chapter>()
+    .HasOne(c => c.Exam)
+    .WithOne(e => e.Chapter)
+    .HasForeignKey<Exam>(e => e.ChapterId)
+    .OnDelete(DeleteBehavior.Cascade);
+
         }
 
 
