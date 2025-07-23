@@ -5,6 +5,7 @@ using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Service.DTOs.Request;
 using Service.DTOs.Response;
 using System.Linq.Expressions;
@@ -50,6 +51,33 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
             return Ok(response);
         }
 
+        //[HttpGet("{id}")]
+        //public IActionResult GetOne([FromRoute] int id)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(userId))
+        //        return Unauthorized("User ID not found in token.");
+
+        //    var exam = _examRepository.GetOne(
+        //        expression: e => e.Id == id && e.Chapter.Course.Instructor.ApplicationUserId == userId,
+        //        includes: [e => e.Chapter, e => e.Questions, e => e.Chapter.Course]);
+
+        //    if (exam is null)
+        //        return NotFound();
+
+        //    var response = new ExamResponse
+        //    {
+        //        Id = exam.Id,
+        //        ChapterId = exam.ChapterId,
+        //        ChapterTitle = exam.Chapter?.Title ?? "",
+        //        TotalQuestions = exam.Questions?.Count ?? 0
+        //    };
+
+        //    return Ok(response);
+        //}
+
+
+
         [HttpGet("{id}")]
         public IActionResult GetOne([FromRoute] int id)
         {
@@ -64,16 +92,29 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
             if (exam is null)
                 return NotFound();
 
-            var response = new ExamResponse
+            var response = new ExamInstructorResponse
             {
                 Id = exam.Id,
+                Title = exam.Title,
+                Deadline = exam.Deadline,
                 ChapterId = exam.ChapterId,
-                ChapterTitle = exam.Chapter?.Title ?? "",
-                TotalQuestions = exam.Questions?.Count ?? 0
+             
+                Questions = exam.Questions.Select(q => new QuestionInstructorResponse
+                {
+                    Id = q.Id,
+                    Text = q.Text,
+                    OptionA = q.OptionA,
+                    OptionB = q.OptionB,
+                    OptionC = q.OptionC,
+                    OptionD = q.OptionD,
+                    Answer = q.Answer
+                }).ToList()
             };
 
             return Ok(response);
         }
+
+
 
         //[HttpPost]
         //public async Task<IActionResult> Create([FromBody] ExamRequest request)
@@ -166,6 +207,40 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
             };
 
             return CreatedAtAction(nameof(GetOne), new { id = response.Id }, response);
+        }
+
+// edit to write more questions not to delete questions and replace it
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Edit(int id, [FromBody] ExamUpdateRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var exam = _examRepository.GetOne(
+                e => e.Id == id && e.Chapter.Course.Instructor.ApplicationUserId == userId,
+                includes: [e => e.Chapter, e => e.Chapter.Course]);
+
+            if (exam == null)
+                return NotFound("Exam not found or you don't have access.");
+
+            // Update fields
+            exam.Title = request.Title;
+            exam.Deadline = request.Deadline;
+
+            // You might want to delete old questions and replace them
+            exam.Questions = request.Questions.Select(q => new Question
+            {
+                Text = q.Text,
+                OptionA = q.OptionA,
+                OptionB = q.OptionB,
+                OptionC = q.OptionC,
+                OptionD = q.OptionD,
+                Answer = q.Answer
+            }).ToList();
+
+            await _examRepository.EditAsync(exam);
+
+
+            return Ok("Exam updated successfully.");
         }
 
 

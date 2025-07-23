@@ -12,6 +12,7 @@ namespace Service.DTOs.Response
         public string Title { get; set; }
         public DateTime Deadline { get; set; }
         public int ChapterId { get; set; }
+      
         public List<QuestionInstructorResponse> Questions { get; set; }
     }
 }
