@@ -21,6 +21,7 @@ namespace Entities
         public string? VideoUrl { get; set; }
         public TimeSpan? Duration { get; set; }
 
+        public ICollection<Assignment> Assignments { get; set; }
 
     }
 }

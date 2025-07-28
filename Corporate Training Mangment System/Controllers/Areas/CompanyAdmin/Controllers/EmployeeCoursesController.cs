@@ -62,7 +62,9 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             return Ok(employeeCourse.Adapt<EmployeeCourseResponse>());
         }
 
-
+        // company can not add mor than the max employee or mx coyrses in it's plan but it can assign the same employee to more than one course 
+        //like we have plan contain of 2 course and 3 employess ==>assign 2 employees for the first cours
+                                                              //==>assign 1 from the first for the second course else 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] AssignCourseRequest request)
         {

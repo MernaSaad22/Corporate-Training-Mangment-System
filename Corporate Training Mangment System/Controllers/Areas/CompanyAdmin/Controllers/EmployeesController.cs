@@ -81,6 +81,48 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         }
 
 
+        //[HttpPost]
+        //public async Task<IActionResult> Create([FromBody] EmployeeRequest request)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(userId))
+        //        return Unauthorized("User ID not found in token.");
+
+        //    var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+        //    if (company is null)
+        //        return Unauthorized("Company not found for this user.");
+
+        //    var user = await _userManager.FindByIdAsync(request.ApplicationUserId);
+        //    if (user is null)
+        //        return BadRequest("User not found.");
+
+        //    var employee = new Employee
+        //    {
+        //        Id = Guid.NewGuid().ToString(),
+        //        ApplicationUserId = user.Id,
+        //        ApplicationUser = user,
+        //        CompanyId = company.Id,
+        //        Company = company,
+        //        JobTitle = request.JobTitle
+        //    };
+
+        //    var newEmployee = await _employeeRepository.CreateAsync(employee);
+        //    if (newEmployee is null)
+        //        return BadRequest();
+
+        //    var response = new EmployeeResponse
+        //    {
+        //        Id = newEmployee.Id,
+        //        JobTitle = newEmployee.JobTitle,
+        //        CompanyId = newEmployee.CompanyId,
+        //        ApplicationUserId = newEmployee.ApplicationUserId,
+        //        UserName = user.UserName,
+        //    };
+
+        //    return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Employees/{response.Id}", response);
+        //}
+
+        // i want when a company Add an employee make sure <=Plan.MaxEmployees
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] EmployeeRequest request)
         {
@@ -88,9 +130,18 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized("User ID not found in token.");
 
-            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            // Include Plan when fetching company
+            var company = _companyRepository.GetOne(
+                c => c.ApplicationUserId == userId,
+                includes: [c => c.Plan]);
+
             if (company is null)
                 return Unauthorized("Company not found for this user.");
+
+            // Check current employee count
+            var existingEmployees = await _employeeRepository.GetAsync(e => e.CompanyId == company.Id);
+            if (existingEmployees.Count() >= company.Plan.MaxEmployees)
+                return BadRequest($"Employee limit reached for your plan. Max allowed: {company.Plan.MaxEmployees}");
 
             var user = await _userManager.FindByIdAsync(request.ApplicationUserId);
             if (user is null)
@@ -121,6 +172,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Employees/{response.Id}", response);
         }
+
 
 
         [HttpPut("{id}")]

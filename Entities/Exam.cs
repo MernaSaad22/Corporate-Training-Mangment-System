@@ -16,5 +16,7 @@ namespace Entities
         public Chapter Chapter { get; set; }
 
         public ICollection<Question> Questions { get; set; }
+
+
     }
 }

@@ -17,7 +17,12 @@ namespace Entities
 
         public string InstructorId { get; set; }  
         public Instructor Instructor { get; set; }
+        public string? FileUrl { get; set; }
+        public DateTime? Deadline { get; set; }
 
+
+        public int LessonId { get; set; } // 🔗 One lesson
+        public Lesson Lesson { get; set; } // Navigation
         public ICollection<EmployeeAssignment> EmployeeAssignments { get; set; }
     }
 }

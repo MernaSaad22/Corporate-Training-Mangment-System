@@ -107,13 +107,22 @@ namespace DataAccess.Migrations
                     b.Property<int>("CourseId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("Deadline")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("InstructorId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -124,6 +133,8 @@ namespace DataAccess.Migrations
                     b.HasIndex("CourseId");
 
                     b.HasIndex("InstructorId");
+
+                    b.HasIndex("LessonId");
 
                     b.ToTable("Assignments");
                 });
@@ -472,6 +483,22 @@ namespace DataAccess.Migrations
                     b.Property<int>("ExamId")
                         .HasColumnType("int");
 
+                    b.Property<string>("OptionA")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OptionB")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OptionC")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OptionD")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -630,9 +657,17 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Entities.Lesson", "Lesson")
+                        .WithMany("Assignments")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Instructor");
+
+                    b.Navigation("Lesson");
                 });
 
             modelBuilder.Entity("Entities.Chapter", b =>
@@ -894,6 +929,11 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("Entities.Exam", b =>
                 {
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("Entities.Lesson", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("Entities.Plan", b =>
