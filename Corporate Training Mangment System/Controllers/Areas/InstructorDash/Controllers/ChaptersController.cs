@@ -171,6 +171,64 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
             return NoContent();
         }
 
+        [HttpPost("move")]
+        public async Task<IActionResult> MoveChapter([FromBody] MoveChapterRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var instructor = _instructorRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (instructor == null)
+                return Unauthorized();
+
+            var chapters = (await _chapterRepository.GetAsync(
+                c => c.CourseId == request.CourseId,
+                includes: [c => c.Course]))
+                .Where(c => c.Course.InstructorId == instructor.Id)
+                .OrderBy(c => c.Order)
+                .ToList();
+
+            var chapter = chapters.FirstOrDefault(c => c.Id == request.ChapterId);
+            if (chapter == null)
+                return NotFound("Chapter not found or unauthorized.");
+
+            int oldOrder = chapter.Order;
+            int newOrder = request.NewOrder;
+
+            if (newOrder < 1 || newOrder > chapters.Count)
+                return BadRequest("Invalid target position.");
+
+            if (newOrder == oldOrder)
+                return Ok("Chapter is already in that position.");
+
+            // Reorder other chapters
+            foreach (var ch in chapters)
+            {
+                if (ch.Id == chapter.Id) continue;
+
+                if (newOrder < oldOrder && ch.Order >= newOrder && ch.Order < oldOrder)
+                    ch.Order += 1;
+                else if (newOrder > oldOrder && ch.Order <= newOrder && ch.Order > oldOrder)
+                    ch.Order -= 1;
+
+                await _chapterRepository.EditAsync(ch);
+            }
+
+            chapter.Order = newOrder;
+            await _chapterRepository.EditAsync(chapter);
+
+            return Ok("Chapter moved successfully.");
+        }
+
+        [HttpGet("{courseId}/chapters-ordered")]
+        public async Task<ActionResult<IEnumerable<ChapterResponse>>> GetOrderedChapters(int courseId)
+        {
+            var chapters = await _chapterRepository.GetAsync(c => c.CourseId == courseId);
+            var orderedChapters = chapters.OrderBy(c => c.Order);
+
+            return Ok(orderedChapters.Adapt<IEnumerable<ChapterResponse>>());
+        }
 
 
     }
