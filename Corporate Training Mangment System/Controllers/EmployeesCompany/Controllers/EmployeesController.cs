@@ -1,13 +1,20 @@
 ﻿using System.Security.Claims;
+using Corporate_Training_Mangment_System.Controllers.EmployeeCompany;
 using DataAccess.IRepository;
 using Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Corporate_Training_Mangment_System.Controllers.EmployeeCompany
+namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Controllers
 {
+
     [Area("EmployeesCompany")]
-    [Route("api/EmployeesCompany")]
+    [Route("api/[area]/[controller]")]
+    [ApiController]
+    [Authorize(Roles = "Employee")]
+    // [Area("EmployeesCompany")]
+    //[Route("api/EmployeesCompany")]
     public class EmployeesController : Controller
     {
         private readonly IRepository<EmployeeCourse> _employeeCourseRepo;
@@ -47,9 +54,9 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeeCompany
 
             var enrolled = employeeCourses.Count();
             var completed = employeeCourses.Count(ec => ec.IsCompleted);
-            var points = completed * 10; 
+            var points = completed * 10;
 
-            var result = new EmployeeCourseDto
+            var result = new EmployeeCourseDtoResponse
             {
                 CoursesEnrolled = enrolled,
                 CoursesCompleted = completed,
@@ -60,6 +67,6 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeeCompany
         }
         ///
     }
-        
-    
+
+
 }

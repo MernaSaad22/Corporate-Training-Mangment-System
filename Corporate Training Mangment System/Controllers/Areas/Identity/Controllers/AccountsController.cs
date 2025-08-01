@@ -15,6 +15,7 @@ using System.Security.Claims;
 using System.Text;
 using LoginRequest = Service.DTOs.Request.LoginRequest;
 using RegisterRequest = Service.DTOs.Request.RegisterRequest;
+using ResetPasswordRequest = Service.DTOs.Request.ResetPasswordRequest;
 namespace Corporate_Training_Mangment_System.Controllers
 {
     
@@ -164,7 +165,7 @@ namespace Corporate_Training_Mangment_System.Controllers
                             new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
                              new Claim(ClaimTypes.Name,applicationUser.UserName),
                              new Claim(ClaimTypes.NameIdentifier,applicationUser.Id),
-                              new Claim(ClaimTypes.Role,String.Join(",",roles))
+                              new Claim(ClaimTypes.Role,String.Join(",",roles))//if user have more than one role 
                           
 
                         };
@@ -268,5 +269,88 @@ namespace Corporate_Training_Mangment_System.Controllers
             return BadRequest(keyValuePairs);
 
         }
+
+
+        [HttpPost("ForgetPassword")]
+        public async Task<IActionResult> ForgetPassword(ForgetPasswordRequest forgetPasswordRequest)
+        {
+
+
+            var applicationUser = await _userManager.FindByEmailAsync(forgetPasswordRequest.EmailOrUserName);
+            ModelStateDictionary keyValuePairs = new ModelStateDictionary();
+            if (applicationUser is null)
+            {
+                applicationUser = await _userManager.FindByNameAsync(forgetPasswordRequest.EmailOrUserName);
+            }
+
+            if (applicationUser is not null)
+            {
+
+                var token = await _userManager.GeneratePasswordResetTokenAsync(applicationUser);
+
+                var resetPasswordLink = Url.Action("ResetPassword", "Accounts", new { area = "Identity", userId = applicationUser.Id, token, email = applicationUser.Email }, Request.Scheme);
+
+                await _emailSender.SendEmailAsync(applicationUser!.Email ?? "", "Reset Password", $"Please Reset Your Account Password By Clicking <a href='{resetPasswordLink}'>Here</a>");
+
+
+
+                return NoContent();
+
+            }
+
+            keyValuePairs.AddModelError("EmailOrUserName", "Invalid Email Or User Name");
+            return BadRequest(keyValuePairs);
+        }
+
+        [HttpGet("GenerateResetToken/{email}")]
+        public async Task<IActionResult> GenerateResetToken(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return NotFound();
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            return Ok(new
+            {
+                userId = user.Id,
+                email = user.Email,
+                token = token
+            });
+        }
+
+
+        [HttpPost("ConfirmResetPassword")]
+        public async Task<IActionResult> ConfirmResetPassword(ResetPasswordRequest resetPasswordRequest)
+        {
+
+
+            var applicationUser = await _userManager.FindByEmailAsync(resetPasswordRequest.Email);
+            ModelStateDictionary keyValuePairs = new ModelStateDictionary();
+
+            if (applicationUser != null && applicationUser.Id == resetPasswordRequest.UserId)
+            {
+                var result = await _userManager.ResetPasswordAsync(applicationUser, resetPasswordRequest.Token, resetPasswordRequest.Password);
+
+                if (result.Succeeded)
+                {
+                    await _emailSender.SendEmailAsync(resetPasswordRequest.Email, "Reset Password Successfully", $"Reset Password Successfully");
+
+
+
+                    return NoContent();
+                }
+                else
+                {
+
+
+                    return BadRequest(result.Errors);
+                }
+            }
+
+            keyValuePairs.AddModelError("Email", "Invalid Email");
+            return BadRequest(keyValuePairs);
+        }
+
+
     }
     }
