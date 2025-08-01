@@ -24,6 +24,11 @@ namespace Corporate_Training_Mangment_System
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            // to check max length for lesson video is 100
+            builder.WebHost.ConfigureKestrel(serverOptions =>
+            {
+                serverOptions.Limits.MaxRequestBodySize = 100 * 1024 * 1024; // 100 MB
+            });
 
 
             var MyAllowSpecificOrigins = "_myAllowSpecificOrigins"; /////

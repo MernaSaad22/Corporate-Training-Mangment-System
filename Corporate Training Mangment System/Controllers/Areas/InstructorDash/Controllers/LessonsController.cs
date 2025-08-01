@@ -161,13 +161,15 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
 
             return NoContent();
         }
-
+        //add max length
+        const long maxVideoSize = 100 * 1024 * 1024; // 100 MB
         [HttpPost("{lessonId}/video")]
         public async Task<IActionResult> UploadLessonVideo(int lessonId, IFormFile videoFile)
         {
             if (videoFile == null || videoFile.Length == 0)
                 return BadRequest("No file uploaded.");
-
+            if (videoFile.Length > maxVideoSize)
+                return BadRequest("File is too large. Max allowed size is 100 MB.");
             // Get Instructor  from token
             var instructorId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(instructorId))
