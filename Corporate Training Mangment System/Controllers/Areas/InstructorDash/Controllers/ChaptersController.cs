@@ -229,7 +229,42 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
 
             return Ok(orderedChapters.Adapt<IEnumerable<ChapterResponse>>());
         }
+        //Drag and drop chapter 
+        [HttpPost("reorder")]
+        public async Task<IActionResult> ReorderChapters([FromBody] ReorderChaptersRequest reorderchapterrequest)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
+            var instructor =  _instructorRepository.GetOne(i => i.ApplicationUserId == userId);
+            if (instructor is null)
+                return Unauthorized();
+
+            
+            var course = _courseRepository.GetOne(c => c.Id == reorderchapterrequest.CourseId);
+            if (course == null || course.InstructorId != instructor.Id)
+                return NotFound("Course not found or unauthorized.");
+
+            var chapters = (await _chapterRepository.GetAsync(
+                c => c.CourseId == reorderchapterrequest.CourseId)).ToList();
+
+          
+            if (reorderchapterrequest.OrderedChapterIds.Count != chapters.Count ||
+                !reorderchapterrequest.OrderedChapterIds.All(id => chapters.Any(c => c.Id == id)))
+            {
+                return BadRequest("Invalid chapter IDs.");
+            }
+
+            for (int i = 0; i < reorderchapterrequest.OrderedChapterIds.Count; i++)
+            {
+                var chapter = chapters.First(c => c.Id == reorderchapterrequest.OrderedChapterIds[i]);
+                chapter.Order = i + 1;
+                await _chapterRepository.EditAsync(chapter); 
+            }
+
+            return Ok("Chapters reordered successfully.");
+        }
 
     }
 }
