@@ -15,6 +15,8 @@ namespace Service.DTOs.Response
         public int ChapterId { get; set; }
         public string ChapterTitle { get; set; }
         public string? VideoUrl { get; set; }
+        //عشان اشوف التغيرات بعيني
+        public int Order { get; set; }
 
     }
 }

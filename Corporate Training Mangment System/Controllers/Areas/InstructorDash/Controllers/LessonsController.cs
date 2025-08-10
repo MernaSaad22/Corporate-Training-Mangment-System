@@ -209,7 +209,45 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
 
             return Ok(new { videoUrl = fullVideoUrl });
         }
+        //Drag and drop lessons in specific course and chapter
+        [HttpPut("reorder")]
+        public async Task<IActionResult> ReorderLessons([FromBody] LessonReorderRequest lessonreorderrequest)
+        {
+            var instructorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (instructorId is null)
+                return Unauthorized();
 
+         
+            var chapter = _chapterRepository.GetOne(
+                c => c.Id == lessonreorderrequest.ChapterId && c.Course.Instructor.ApplicationUserId == instructorId,
+                includes: [c => c.Course]
+            );
+
+            if (chapter == null)
+                return Forbid("You don't own this chapter.");
+
+          
+            var lessons = await _lessonRepository.GetAsync(
+                l => l.ChapterId == lessonreorderrequest.ChapterId);
+            // بعمل dectionary بدل ما اعمل foreach كل مرة
+            var lessonDict = lessons.ToDictionary(l => l.Id);
+
+            for (int i = 0; i < lessonreorderrequest.OrderedLessonIds.Count; i++)
+            {
+                var lessonId = lessonreorderrequest.OrderedLessonIds[i];
+                if (lessonDict.TryGetValue(lessonId, out var lesson))
+                {
+                    lesson.Order = i + 1; 
+                }
+            }
+
+            foreach (var lesson in lessons)
+            {
+                await _lessonRepository.EditAsync(lesson);
+            }
+
+            return Ok("Lessons reordered successfully.");
+        }
 
 
     }
