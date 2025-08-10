@@ -265,7 +265,63 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.InstructorDash.Co
 
             return NoContent();
         }
+        //edit specific question
+        [HttpPatch("{examId}/questions/{questionId}")]
+        public async Task<IActionResult> UpdateQuestion(int examId, int questionId, [FromBody] QuestionUpdateRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
+            var exam = _examRepository.GetOne(
+                e => e.Id == examId && e.Chapter.Course.Instructor.ApplicationUserId == userId,
+                includes: [e => e.Questions, e => e.Chapter, e => e.Chapter.Course]
+            );
+
+            if (exam == null)
+                return NotFound("Exam not found or unauthorized.");
+
+            var question = exam.Questions.FirstOrDefault(q => q.Id == questionId);
+            if (question == null)
+                return NotFound("Question not found in this exam.");
+
+          
+            question.Text = request.Text;
+            question.OptionA = request.OptionA;
+            question.OptionB = request.OptionB;
+            question.OptionC = request.OptionC;
+            question.OptionD = request.OptionD;
+            question.Answer = request.Answer;
+
+            await _examRepository.EditAsync(exam); 
+
+            return Ok("Question updated successfully.");
+        }
+        //delete specific question
+        [HttpDelete("{examId}/questions/{questionId}")]
+        public async Task<IActionResult> DeleteQuestion(int examId, int questionId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var exam = _examRepository.GetOne(
+                e => e.Id == examId && e.Chapter.Course.Instructor.ApplicationUserId == userId,
+                includes: [e => e.Questions, e => e.Chapter, e => e.Chapter.Course]
+            );
+
+            if (exam == null)
+                return NotFound("Exam not found or unauthorized.");
+
+            var question = exam.Questions.FirstOrDefault(q => q.Id == questionId);
+            if (question == null)
+                return NotFound("Question not found in this exam.");
+
+            exam.Questions.Remove(question); 
+
+            await _examRepository.EditAsync(exam); 
+
+            return Ok("Question deleted successfully.");
+        }
 
     }
 }

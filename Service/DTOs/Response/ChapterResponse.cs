@@ -14,6 +14,7 @@ namespace Service.DTOs.Response
         public int CourseId { get; set; }
         public string CourseTitle { get; set; }
         //زودت الاوردر عشان اشوف التغيير مش اكتر :)
+        //انا كده كده عاملة chapters-ordered ==>Get action 
         public int Order { get; set; }
     }
 }
