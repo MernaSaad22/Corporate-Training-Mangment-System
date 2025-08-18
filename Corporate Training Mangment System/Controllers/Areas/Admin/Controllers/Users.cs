@@ -1,6 +1,7 @@
 ﻿using DataAccess.IRepository;
 using Entities;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
     [Area("Admin")]
     [Route("api/[area]/[controller]")]
     [ApiController]
+    //[Authorize(Roles = "SuperAdmin")]
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
@@ -31,8 +33,12 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
         {
             var roles = await _userRepository.GetAsync();
 
+
             return Ok(roles.Adapt<IEnumerable<UserResponse>>());
         }
+
+
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOne([FromRoute] string id)
         {
@@ -47,6 +53,10 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
 
             return NotFound();
         }
+
+
+
+
 
         [HttpPost("")]
 

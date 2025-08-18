@@ -57,13 +57,19 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             //Console.WriteLine("UserId: " + userId);
+            
 
             if (userId is null)
                 return Unauthorized();
 
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+           
+
             if (company == null)
                 return Unauthorized();
+            //when i test if enddate<datetime for a company so it's plan is expired 
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
 
             var categories = await _coursecategoryRepository.GetAsync(c => c.CompanyId == company.Id);
             return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
