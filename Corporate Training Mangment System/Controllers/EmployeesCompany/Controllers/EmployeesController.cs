@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Service.DTOs.Request;
 using Service.DTOs.Response;
+using Service.Utility.Progress;
 
 namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Controllers
 {
@@ -32,9 +33,14 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
         private readonly IRepository<Exam> _examRepository;
        
         private readonly IRepository<ExamSubmission> _examSubmissionRepo;
+        private readonly IRepository<EmployeeCourseProgress> _courseProgressRepo;
+        private readonly IRepository<EmployeeLessonProgress> _lessonProgressRepo;
+        private readonly IProgressService _progressService;
+
         public EmployeesController(IRepository<EmployeeCourse> employeeCourseRepo, IRepository<Chapter> chapterRepository, IEmployeeRepository employeeRepository
             , IRepository<Course> courseRepository, IRepository<Lesson> lessonRepository,IRepository<Assignment> assignmentRepository, IRepository<EmployeeAssignment> employeeAssignmentRepository
-            , IRepository<Exam> examRepository, IRepository<ExamSubmission> examSubmissionRepo)
+            , IRepository<Exam> examRepository, IRepository<ExamSubmission> examSubmissionRepo, IRepository<EmployeeCourseProgress> courseProgressRepo,
+    IRepository<EmployeeLessonProgress> lessonProgressRepo, IProgressService progressService)
         {
             _employeeCourseRepo = employeeCourseRepo;
             _chapterRepository = chapterRepository;
@@ -45,6 +51,9 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             _employeeAssignmentRepository = employeeAssignmentRepository;
             _examRepository = examRepository;
             _examSubmissionRepo = examSubmissionRepo;
+            _courseProgressRepo = courseProgressRepo;
+            _lessonProgressRepo = lessonProgressRepo;
+            _progressService = progressService;
         }
         [HttpGet("my-courses")]
         public async Task<IActionResult> GetMyCourses()
@@ -286,6 +295,23 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             if (!employeeCourses.Any())
                 return Forbid("You are not enrolled in this course.");
 
+
+            // Record lesson view progress (if not already viewed)
+            var alreadyViewed = _lessonProgressRepo.GetOne(lp =>
+                lp.EmployeeId == employee.Id && lp.LessonId == lesson.Id);
+
+            if (alreadyViewed is null)
+            {
+                await _lessonProgressRepo.CreateAsync(new EmployeeLessonProgress
+                {
+                    EmployeeId = employee.Id,
+                    LessonId = lesson.Id,
+                    ViewedAt = DateTime.UtcNow
+                });
+            }
+
+            await _progressService.UpdateEmployeeCourseProgress(employee.Id, lesson.Chapter.CourseId);
+
             var response = lesson.Adapt<LessonInChapter>(); 
             return Ok(response);
         }
@@ -494,27 +520,29 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
 
 
 
-        [HttpGet("EmployeeStats/{employeeId}")]
-        public async Task<IActionResult> GetEmployeeStats(string employeeId)
-        {
-            var employeeCourses = await _employeeCourseRepo.GetAsync(
-                expression: ec => ec.EmployeeId == employeeId
-            );
+        //[HttpGet("EmployeeStats/{employeeId}")]
+        //public async Task<IActionResult> GetEmployeeStats(string employeeId)
+        //{
+        //    var employeeCourses = await _employeeCourseRepo.GetAsync(
+        //        expression: ec => ec.EmployeeId == employeeId
+        //    );
 
-            var enrolled = employeeCourses.Count();
-            var completed = employeeCourses.Count(ec => ec.IsCompleted);
-            var points = completed * 10;
+        //    var enrolled = employeeCourses.Count();
+        //    var completed = employeeCourses.Count(ec => ec.IsCompleted);
+        //    var points = completed * 10;
 
-            var result = new EmployeeCourseDtoResponse
-            {
-                CoursesEnrolled = enrolled,
-                CoursesCompleted = completed,
-                PointsEarned = points
-            };
+        //    var result = new EmployeeCourseDtoResponse
+        //    {
+        //        CoursesEnrolled = enrolled,
+        //        CoursesCompleted = completed,
+        //        PointsEarned = points
+        //    };
 
-            return Ok(result);
-        }
+        //    return Ok(result);
+        //}
         ///
+
+
 
 
 
@@ -578,8 +606,8 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             };
 
             await _examSubmissionRepo.CreateAsync(submission);
-         
 
+            await _progressService.UpdateEmployeeCourseProgress(employee.Id, exam.Chapter.CourseId);
             return Ok(new
             {
                 Message = "Exam submitted successfully.",
@@ -588,6 +616,39 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
                 CorrectAnswers = correctCount
             });
         }
+
+
+
+
+        [HttpGet("my-course-progress/{courseId}")]
+        public IActionResult GetCourseProgress([FromRoute] int courseId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId is null) return Unauthorized();
+
+            var employee = _employeeRepository.GetOne(e => e.ApplicationUserId == userId);
+            if (employee is null) return NotFound();
+
+            var progress = _courseProgressRepo.GetOne(p =>
+                p.EmployeeId == employee.Id && p.CourseId == courseId,
+                includes: [p => p.Course]);
+
+            if (progress is null) return NotFound("Progress not tracked yet.");
+
+            return Ok(new
+            {
+                CourseTitle = progress.Course?.Title,
+                LessonProgress = progress.LessonProgress,
+                AssignmentProgress = progress.AssignmentProgress,
+                ExamProgress = progress.ExamProgress,
+                TotalProgress = progress.TotalProgress,
+                LastUpdated = progress.LastUpdated
+            });
+        }
+
+
+
+
 
     }
 

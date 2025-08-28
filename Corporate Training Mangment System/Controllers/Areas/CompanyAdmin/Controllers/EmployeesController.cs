@@ -23,12 +23,17 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         private readonly IRepository<Employee> _employeeRepository;
         private readonly IRepository<Company> _companyRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IRepository<EmployeeCourseProgress> _courseProgressRepository;
+        private readonly IRepository<Course> _courseRepository;
 
-        public EmployeesController(IRepository<Employee> employeeRepository, IRepository<Company> companyRepository, UserManager<ApplicationUser> userManager)
+        public EmployeesController(IRepository<Employee> employeeRepository, IRepository<Company> companyRepository, UserManager<ApplicationUser> userManager
+            , IRepository<EmployeeCourseProgress> courseProgressRepository,IRepository<Course>courseRepository)
         {
             _employeeRepository = employeeRepository;
             _companyRepository = companyRepository;
             this._userManager = userManager;
+            _courseProgressRepository = courseProgressRepository;
+            _courseRepository = courseRepository;
         }
 
         
@@ -230,6 +235,86 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             if (deleted is null) return BadRequest("Failed to delete employee.");
 
             return NoContent();
+        }
+
+
+
+
+        [HttpGet("course/{courseId}/progress")]
+        public async Task<ActionResult<IEnumerable<EmployeeProgressResponse>>> GetEmployeesProgressByCourse(int courseId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found in token.");
+
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company == null)
+                return Unauthorized("Company not found for this user.");
+
+            var employeesInCompany = await _employeeRepository.GetAsync(e => e.CompanyId == company.Id);
+            var employeeIds = employeesInCompany.Select(e => e.Id).ToList();
+
+            var progressList = await _courseProgressRepository.GetAsync(
+                p => p.CourseId == courseId && employeeIds.Contains(p.EmployeeId),
+                includes: [p => p.Employee, p => p.Employee.ApplicationUser]
+            );
+
+            var result = progressList.Select(p => new EmployeeProgressResponse
+            {
+                EmployeeId = p.EmployeeId,
+                EmployeeName = p.Employee?.ApplicationUser?.UserName ?? "Unknown",
+                LessonProgress = (double)p.LessonProgress,
+                AssignmentProgress = (double)p.AssignmentProgress,
+                ExamProgress = (double)p.ExamProgress,
+                TotalProgress = Math.Round((double)(p.LessonProgress + p.AssignmentProgress + p.ExamProgress), 2),
+                LastUpdated = p.LastUpdated
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("{employeeId}/course/{courseId}")]
+        public IActionResult GetEmployeeCourseProgress([FromRoute]string employeeId, [FromRoute]int courseId)
+        {
+            var companyUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(companyUserId))
+                return Unauthorized("User ID not found in token.");
+
+           
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == companyUserId);
+            if (company == null)
+                return Unauthorized("Company not found for this user.");
+
+ 
+            var employee = _employeeRepository.GetOne(e => e.Id == employeeId && e.CompanyId == company.Id);
+            if (employee == null)
+                return Unauthorized("Employee not found or does not belong to your company.");
+
+     
+            var course = _courseRepository.GetOne(c => c.Id == courseId);
+            if (course == null)
+                return NotFound("Course not found.");
+
+    
+            var progress = _courseProgressRepository.GetOne(
+                p => p.EmployeeId == employeeId && p.CourseId == courseId,
+                includes: [p => p.Employee, p => p.Employee.ApplicationUser]);
+
+            if (progress == null)
+                return NotFound("No progress found for this employee in this course.");
+
+            var response = new EmployeeProgressResponse
+            {
+                EmployeeId =employeeId,
+                EmployeeName = progress.Employee.ApplicationUser.UserName,
+                LessonProgress = (double)progress.LessonProgress,
+                AssignmentProgress = (double)progress.AssignmentProgress,
+                ExamProgress = (double)progress.ExamProgress,
+                TotalProgress = (double)Math.Round(progress.LessonProgress + progress.AssignmentProgress + progress.ExamProgress, 2),
+                LastUpdated = progress.LastUpdated
+            };
+
+            return Ok(response);
         }
 
 

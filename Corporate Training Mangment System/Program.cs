@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Service.DTOs.Response;
+using Service.Utility.Progress;
 namespace Corporate_Training_Mangment_System
 {
     public class Program
@@ -110,6 +111,9 @@ namespace Corporate_Training_Mangment_System
             builder.Services.AddScoped<IEmployeeAssignmentSubmissionRepository, EmployeeAssignmentSubmissionRepository>();
             builder.Services.AddScoped<IExamSubmissionRepository, ExamSubmissionRepository>();
              builder.Services.AddScoped<IQuestionAnswerRepository, QuestionAnswerRepository>();
+            builder.Services.AddScoped<IEmployeeLessonProgressesRepository, EmployeeLessonProgressesRepository>();
+            builder.Services.AddScoped<IEmployeeCourseProgressRepository, EmployeeCourseProgressRepository>();
+            builder.Services.AddScoped<IProgressService, ProgressService>();
 
             //add this line to make me test CoursesController
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

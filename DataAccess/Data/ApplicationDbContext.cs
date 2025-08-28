@@ -34,6 +34,8 @@ namespace DataAccess.Data
 
         public DbSet<ExamSubmission> ExamSubmissions { get; set; }
         public DbSet<QuestionAnswer> QuestionAnswers { get; set; }
+        public DbSet<EmployeeLessonProgress> EmployeeLessonProgresses { get; set; }
+        public DbSet<EmployeeCourseProgress> EmployeeCourseProgresses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -167,7 +169,41 @@ namespace DataAccess.Data
                 .HasIndex(es => new { es.ExamId, es.EmployeeId })
                 .IsUnique();
 
+            modelBuilder.Entity<EmployeeLessonProgress>()
+     .HasOne(e => e.Employee)
+     .WithMany()
+     .HasForeignKey(e => e.EmployeeId)
+     .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<EmployeeLessonProgress>()
+                .HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Optional: prevent duplicate progress entries
+            modelBuilder.Entity<EmployeeLessonProgress>()
+                .HasIndex(p => new { p.EmployeeId, p.LessonId })
+                .IsUnique();
+
+
+
+            modelBuilder.Entity<EmployeeCourseProgress>()
+    .HasOne(p => p.Employee)
+    .WithMany()
+    .HasForeignKey(p => p.EmployeeId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmployeeCourseProgress>()
+                .HasOne(p => p.Course)
+                .WithMany()
+                .HasForeignKey(p => p.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Optional: Ensure one progress entry per employee per course
+            modelBuilder.Entity<EmployeeCourseProgress>()
+                .HasIndex(p => new { p.EmployeeId, p.CourseId })
+                .IsUnique();
 
         }
 

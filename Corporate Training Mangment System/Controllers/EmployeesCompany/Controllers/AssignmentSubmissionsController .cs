@@ -4,6 +4,7 @@ using Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.DTOs.Request;
+using Service.Utility.Progress;
 using System.Linq;
 using System.Security.Claims;
 
@@ -18,15 +19,20 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
         private readonly IRepository<EmployeeAssignmentSubmission> _submissionRepo;
         private readonly IRepository<Employee> _employeeRepo;
         private readonly IRepository<EmployeeAssignment> _employeeAssignmentRepo;
+        private readonly IProgressService _progressService;
+        private readonly IRepository<Assignment> _assignmentRepository;
 
         public AssignmentSubmissionsController(
             IRepository<EmployeeAssignmentSubmission> submissionRepo,
             IRepository<Employee> employeeRepo,
-            IRepository<EmployeeAssignment> employeeAssignmentRepo)
+            IRepository<EmployeeAssignment> employeeAssignmentRepo, IProgressService progressService, IRepository<Assignment> assignmentRepository)
         {
             _submissionRepo = submissionRepo;
             _employeeRepo = employeeRepo;
             _employeeAssignmentRepo = employeeAssignmentRepo;
+            _progressService = progressService;
+            _assignmentRepository = assignmentRepository;
+            _assignmentRepository=assignmentRepository;
         }
 
         [HttpPost]
@@ -37,9 +43,16 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             var employee = _employeeRepo.GetOne(e => e.ApplicationUserId == userId);
             if (employee is null) return Unauthorized("Employee not found.");
 
-       
-            var employeeAssignment = _employeeAssignmentRepo.GetOne(ea =>
-                ea.EmployeeId == employee.Id && ea.AssignmentId == request.AssignmentId);
+
+            //var employeeAssignment = _employeeAssignmentRepo.GetOne(ea =>
+            //    ea.EmployeeId == employee.Id && ea.AssignmentId == request.AssignmentId);
+
+            //for progress
+            var employeeAssignment = _employeeAssignmentRepo.GetOne(
+    ea => ea.EmployeeId == employee.Id && ea.AssignmentId == request.AssignmentId,
+    includes: [ea => ea.Assignment, ea => ea.Assignment.Lesson, ea => ea.Assignment.Lesson.Chapter]
+);
+
             if (employeeAssignment is null)
                 return BadRequest("This assignment is not assigned to you.");
 
@@ -76,6 +89,51 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             };
 
             await _submissionRepo.CreateAsync(submission);
+            //for progress
+            //        var assignment = _assignmentRepository.GetOne(
+            //a => a.Id == request.AssignmentId,
+            //includes: [a => a.Lesson, a => a.Lesson.Chapter]);
+
+            //        if (assignment != null)
+            //        {
+            //            await _progressService.UpdateEmployeeCourseProgress(employee.Id, assignment.Lesson.Chapter.CourseId);
+            //        }
+
+
+
+            // ✅ Update or create EmployeeAssignment as completed
+            if (employeeAssignment == null)
+            {
+                var newEmployeeAssignment = new EmployeeAssignment
+                {
+                    EmployeeId = employee.Id,
+                    AssignmentId = request.AssignmentId,
+                   
+                    CompletedAt = DateTime.UtcNow,
+                    IsCompleted = true
+                };
+
+                await _employeeAssignmentRepo.CreateAsync(newEmployeeAssignment);
+            }
+            else
+            {
+                employeeAssignment.CompletedAt = DateTime.UtcNow;
+                employeeAssignment.IsCompleted = true;
+               
+                await _employeeAssignmentRepo.EditAsync(employeeAssignment);
+            }
+
+            // Now update progress
+            var assignment = _assignmentRepository.GetOne(
+                a => a.Id == request.AssignmentId,
+                includes: [a => a.Lesson, a => a.Lesson.Chapter]);
+
+            if (assignment != null)
+            {
+                await _progressService.UpdateEmployeeCourseProgress(employee.Id, assignment.Lesson.Chapter.CourseId);
+            }
+
+
 
             return Ok(new { Message = "Submission uploaded successfully." });
         }
@@ -125,9 +183,16 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             var employee = _employeeRepo.GetOne(e => e.ApplicationUserId == userId);
             if (employee is null) return Unauthorized("Employee not found.");
 
+            //var submission = _submissionRepo.GetOne(
+            //    s => s.EmployeeId == employee.Id && s.AssignmentId == assignmentId
+            //);
+
+            //for progress
             var submission = _submissionRepo.GetOne(
-                s => s.EmployeeId == employee.Id && s.AssignmentId == assignmentId
-            );
+    s => s.EmployeeId == employee.Id && s.AssignmentId == assignmentId,
+    includes: [s => s.Assignment, s => s.Assignment.Lesson, s => s.Assignment.Lesson.Chapter]
+);
+
             if (submission is null)
                 return NotFound("No existing submission found to update.");
 
@@ -161,6 +226,39 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
 
             await _submissionRepo.EditAsync(submission);
 
+            // for progress
+            //            await _progressService.UpdateEmployeeCourseProgress(
+            //    employee.Id,
+            //    submission.Assignment.Lesson.Chapter.CourseId
+            //);
+
+            // ✅ Update or create EmployeeAssignment record
+            var employeeAssignment = _employeeAssignmentRepo.GetOne(
+                ea => ea.EmployeeId == employee.Id && ea.AssignmentId == assignmentId
+            );
+
+            if (employeeAssignment == null)
+            {
+                var newEmployeeAssignment = new EmployeeAssignment
+                {
+                    EmployeeId = employee.Id,
+                    AssignmentId = assignmentId,
+                  
+                    CompletedAt = DateTime.UtcNow,
+                    IsCompleted = true
+                };
+
+                await _employeeAssignmentRepo.CreateAsync(newEmployeeAssignment);
+            }
+            else
+            {
+              
+                employeeAssignment.CompletedAt = DateTime.UtcNow;
+                employeeAssignment.IsCompleted = true;
+
+                await _employeeAssignmentRepo.EditAsync(employeeAssignment);
+            }
+
             return Ok(new { Message = "Submission updated successfully." });
         }
 
@@ -172,9 +270,15 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             var employee = _employeeRepo.GetOne(e => e.ApplicationUserId == userId);
             if (employee is null) return Unauthorized("Employee not found.");
 
+            //var submission = _submissionRepo.GetOne(
+            //    s => s.EmployeeId == employee.Id && s.AssignmentId == assignmentId
+            //);
+
+            //for progress
             var submission = _submissionRepo.GetOne(
-                s => s.EmployeeId == employee.Id && s.AssignmentId == assignmentId
-            );
+    s => s.EmployeeId == employee.Id && s.AssignmentId == assignmentId,
+    includes: [s => s.Assignment, s => s.Assignment.Lesson, s => s.Assignment.Lesson.Chapter]
+);
 
             if (submission is null)
                 return NotFound("Submission not found.");
@@ -190,6 +294,38 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
 
             await _submissionRepo.DeleteAsync(submission);
 
+            //            await _progressService.UpdateEmployeeCourseProgress(
+            //    employee.Id,
+            //    submission.Assignment.Lesson.Chapter.CourseId
+            //);
+
+
+            // ✅ Update or create EmployeeAssignment record
+            var employeeAssignment = _employeeAssignmentRepo.GetOne(
+                ea => ea.EmployeeId == employee.Id && ea.AssignmentId == assignmentId
+            );
+
+            if (employeeAssignment == null)
+            {
+                var newEmployeeAssignment = new EmployeeAssignment
+                {
+                    EmployeeId = employee.Id,
+                    AssignmentId = assignmentId,
+                 
+                    CompletedAt = DateTime.UtcNow,
+                    IsCompleted = true
+                };
+
+                await _employeeAssignmentRepo.CreateAsync(newEmployeeAssignment);
+            }
+            else
+            {
+               
+                employeeAssignment.CompletedAt = DateTime.UtcNow;
+                employeeAssignment.IsCompleted = true;
+
+                await _employeeAssignmentRepo.EditAsync(employeeAssignment);
+            }
             return Ok(new { Message = "Submission deleted successfully." });
         }
 
