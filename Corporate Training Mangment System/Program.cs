@@ -107,6 +107,9 @@ namespace Corporate_Training_Mangment_System
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IDBInitializer, DBInitializer>();
 
+            builder.Services.AddScoped<IEmployeeAssignmentSubmissionRepository, EmployeeAssignmentSubmissionRepository>();
+            builder.Services.AddScoped<IExamSubmissionRepository, ExamSubmissionRepository>();
+             builder.Services.AddScoped<IQuestionAnswerRepository, QuestionAnswerRepository>();
 
             //add this line to make me test CoursesController
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

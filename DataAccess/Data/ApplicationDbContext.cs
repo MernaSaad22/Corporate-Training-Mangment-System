@@ -30,6 +30,10 @@ namespace DataAccess.Data
       public DbSet<Employee>Employees { get; set; }
         public DbSet<Instructor> Instructors { get; set; }
 
+        public DbSet<EmployeeAssignmentSubmission> EmployeeAssignmentSubmissions { get; set; }
+
+        public DbSet<ExamSubmission> ExamSubmissions { get; set; }
+        public DbSet<QuestionAnswer> QuestionAnswers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -106,6 +110,64 @@ namespace DataAccess.Data
     .WithOne(e => e.Chapter)
     .HasForeignKey<Exam>(e => e.ChapterId)
     .OnDelete(DeleteBehavior.Cascade);
+
+
+
+
+            modelBuilder.Entity<EmployeeAssignmentSubmission>()
+    .HasOne(sub => sub.Employee)
+    .WithMany()
+    .HasForeignKey(sub => sub.EmployeeId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmployeeAssignmentSubmission>()
+                .HasOne(sub => sub.Assignment)
+                .WithMany()
+                .HasForeignKey(sub => sub.AssignmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ❗ Unique constraint to ensure one submission per employee per assignment
+            modelBuilder.Entity<EmployeeAssignmentSubmission>()
+                .HasIndex(sub => new { sub.EmployeeId, sub.AssignmentId })
+                .IsUnique();
+
+
+
+
+            // ExamSubmission - Employee relationship (many ExamSubmissions to one Employee)
+            modelBuilder.Entity<ExamSubmission>()
+                .HasOne(es => es.Employee)
+                .WithMany() // or .WithMany(e => e.ExamSubmissions) if you have a navigation property in Employee
+                .HasForeignKey(es => es.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ExamSubmission - Exam relationship (many ExamSubmissions to one Exam)
+            modelBuilder.Entity<ExamSubmission>()
+                .HasOne(es => es.Exam)
+                .WithMany() // or .WithMany(e => e.ExamSubmissions) if you have a nav property in Exam
+                .HasForeignKey(es => es.ExamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // QuestionAnswer - ExamSubmission relationship (many QuestionAnswers to one ExamSubmission)
+            modelBuilder.Entity<QuestionAnswer>()
+                .HasOne(qa => qa.ExamSubmission)
+                .WithMany(es => es.QuestionAnswers)
+                .HasForeignKey(qa => qa.ExamSubmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // QuestionAnswer - Question relationship (many QuestionAnswers to one Question)
+            modelBuilder.Entity<QuestionAnswer>()
+                .HasOne(qa => qa.Question)
+                .WithMany() // or .WithMany(q => q.QuestionAnswers) if you have navigation property
+                .HasForeignKey(qa => qa.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Optional: Prevent multiple submissions of the same exam by the same employee
+            modelBuilder.Entity<ExamSubmission>()
+                .HasIndex(es => new { es.ExamId, es.EmployeeId })
+                .IsUnique();
+
+
 
         }
 

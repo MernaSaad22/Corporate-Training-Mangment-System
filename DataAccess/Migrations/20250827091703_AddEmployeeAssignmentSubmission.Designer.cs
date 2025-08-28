@@ -4,6 +4,7 @@ using DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250827091703_AddEmployeeAssignmentSubmission")]
+    partial class AddEmployeeAssignmentSubmission
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -332,9 +335,6 @@ namespace DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("Grade")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("SubmittedAt")
                         .HasColumnType("datetime2");
 
@@ -405,37 +405,6 @@ namespace DataAccess.Migrations
                         .IsUnique();
 
                     b.ToTable("Exames");
-                });
-
-            modelBuilder.Entity("Entities.ExamSubmission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("ExamId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("Grade")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SubmittedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("ExamId", "EmployeeId")
-                        .IsUnique();
-
-                    b.ToTable("ExamSubmissions");
                 });
 
             modelBuilder.Entity("Entities.Instructor", b =>
@@ -574,33 +543,6 @@ namespace DataAccess.Migrations
                     b.HasIndex("ExamId");
 
                     b.ToTable("Questions");
-                });
-
-            modelBuilder.Entity("Entities.QuestionAnswer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Answer")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ExamSubmissionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExamSubmissionId");
-
-                    b.HasIndex("QuestionId");
-
-                    b.ToTable("QuestionAnswers");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -916,25 +858,6 @@ namespace DataAccess.Migrations
                     b.Navigation("Chapter");
                 });
 
-            modelBuilder.Entity("Entities.ExamSubmission", b =>
-                {
-                    b.HasOne("Entities.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Entities.Exam", "Exam")
-                        .WithMany()
-                        .HasForeignKey("ExamId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("Exam");
-                });
-
             modelBuilder.Entity("Entities.Instructor", b =>
                 {
                     b.HasOne("Entities.ApplicationUser", "ApplicationUser")
@@ -972,25 +895,6 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Exam");
-                });
-
-            modelBuilder.Entity("Entities.QuestionAnswer", b =>
-                {
-                    b.HasOne("Entities.ExamSubmission", "ExamSubmission")
-                        .WithMany("QuestionAnswers")
-                        .HasForeignKey("ExamSubmissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Entities.Question", "Question")
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ExamSubmission");
-
-                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1079,11 +983,6 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("Entities.Exam", b =>
                 {
                     b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("Entities.ExamSubmission", b =>
-                {
-                    b.Navigation("QuestionAnswers");
                 });
 
             modelBuilder.Entity("Entities.Lesson", b =>
