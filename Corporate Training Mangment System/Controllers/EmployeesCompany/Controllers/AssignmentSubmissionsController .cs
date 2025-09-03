@@ -306,7 +306,7 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             //}
 
 
-
+            //===============><=======================
             // i test it for debuge and i found [Debug] TotalProgress: 88.31
           //  [Debug] CompletedAt(deadline): 9 / 16 / 2025 6:56:33 PM, Now: 9 / 3 / 2025 1:27:24 PM
            // [Debug] Conditions not met for marking as completed

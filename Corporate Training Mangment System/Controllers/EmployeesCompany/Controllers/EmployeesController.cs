@@ -567,7 +567,7 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
                 return NotFound("Exam not found");
 
             // ✅ Constrain: Ensure employee is enrolled in the course containing this exam
-            with:
+           // with:
 
             var enrollment = _employeecourseRepository.GetOne(ec =>
                 ec.EmployeeId == employee.Id &&
@@ -641,6 +641,8 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             var employee = _employeeRepository.GetOne(e => e.ApplicationUserId == userId);
             if (employee is null) return Unauthorized();
 
+ 
+
 
             var existingSubmission = _examSubmissionRepo.GetOne(
                 es => es.ExamId == examId && es.EmployeeId == employee.Id
@@ -659,6 +661,22 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
 
             if (exam == null)
                 return NotFound("Exam not found");
+
+
+            var enrollment = _employeecourseRepository.GetOne(ec =>
+              ec.EmployeeId == employee.Id &&
+              ec.CourseId == exam.Chapter.CourseId);
+
+            if (enrollment == null)
+            {
+                return Ok("You are not enrolled in the course for this exam.");
+            }
+
+
+            if (exam.Deadline < DateTime.UtcNow)
+            {
+                return Ok("The exam deadline has passed. You can no longer submit the exam.");
+            }
 
             if (exam.Chapter == null)
                 return Ok("Exam is not linked to a chapter.");
