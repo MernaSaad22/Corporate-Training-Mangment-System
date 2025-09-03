@@ -191,6 +191,11 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company == null) return Unauthorized();
 
+            //renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
+
             var instructor = instructorRequest.Adapt<Instructor>();
             instructor.Id = Guid.NewGuid().ToString();
             instructor.CompanyId = company.Id;
@@ -285,6 +290,12 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company == null) return Unauthorized();
+
+
+            //renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
 
             var existingInstructor = _instructorRepository.GetOne(i => i.Id == id);
             if (existingInstructor == null) return NotFound();

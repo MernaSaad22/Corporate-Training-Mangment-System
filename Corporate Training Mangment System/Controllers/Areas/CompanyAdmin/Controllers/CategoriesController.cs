@@ -68,8 +68,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             if (company == null)
                 return Unauthorized();
             //when i test if enddate<datetime for a company so it's plan is expired 
-            if (company.EndDate < DateTime.Now)
-                return Ok("Your subscription has expired. Please renew your plan.");
+            //if (company.EndDate < DateTime.Now)
+            //    return Ok("Your subscription has expired. Please renew your plan.");
 
             var categories = await _coursecategoryRepository.GetAsync(c => c.CompanyId == company.Id);
             return Ok(categories.Adapt<IEnumerable<CourseCategoruResponse>>());
@@ -122,7 +122,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetOne([FromRoute] int id)
+        public IActionResult GetOne([FromRoute] int id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             //var userId = "90d5f065-d5a5-41ec-a195-d1910d97d86e";
@@ -138,9 +138,12 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             if (category is null)
                 return NotFound();
 
-            // 🔐 Ownership check
+         
             if (category.CompanyId != company.Id)
                 return Forbid();
+            //
+            //if (company.EndDate < DateTime.Now)
+            //    return Ok("Your subscription has expired. Please renew your plan.");
 
             return Ok(category.Adapt<CourseCategoruResponse>());
         }
@@ -159,6 +162,9 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company == null)
                 return Unauthorized();
+            //
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
 
             var newCategory = coursecategoryRequest.Adapt<CourseCategory>();
             newCategory.CompanyId = company.Id;
@@ -239,10 +245,13 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             // Check ownership
             if (categoryInDB.CompanyId != company.Id)
                 return Forbid();
+            //To renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
 
             var updatedCategory = coursecategoryRequest.Adapt<CourseCategory>();
             updatedCategory.Id = id;
-            updatedCategory.CompanyId = company.Id; // Ensure company ID stays the same
+            updatedCategory.CompanyId = company.Id; 
 
             var result = await _coursecategoryRepository.EditAsync(updatedCategory);
             if (result is not null)
@@ -283,6 +292,9 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var company =  _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company is null)
                 return Unauthorized();
+            //
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
 
             var category = _coursecategoryRepository.GetOne(e => e.Id == id);
             if (category is null)

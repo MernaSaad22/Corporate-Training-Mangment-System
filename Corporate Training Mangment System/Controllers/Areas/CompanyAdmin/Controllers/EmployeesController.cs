@@ -135,13 +135,17 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized("User ID not found in token.");
 
-            // Include Plan when fetching company
+            
             var company = _companyRepository.GetOne(
                 c => c.ApplicationUserId == userId,
                 includes: [c => c.Plan]);
 
             if (company is null)
                 return Unauthorized("Company not found for this user.");
+            //renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
 
             // Check current employee count
             var existingEmployees = await _employeeRepository.GetAsync(e => e.CompanyId == company.Id);
@@ -190,6 +194,10 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company == null)
                 return Unauthorized("Company not found for this user.");
+            //renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
 
             var employeeInDb = _employeeRepository.GetOne(
                 e => e.Id == id && e.CompanyId == company.Id,
@@ -227,6 +235,11 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company is null)
                 return Unauthorized("Company not found for this user.");
+
+            //renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
 
             var employee = _employeeRepository.GetOne(e => e.Id == id && e.CompanyId == company.Id);
             if (employee is null) return NotFound("Employee not found or does not belong to your company.");

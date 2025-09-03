@@ -175,6 +175,9 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
                 includes: new Expression<Func<Company, object>>[] { c => c.Plan });
 
             if (company is null) return Unauthorized();
+            //renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
 
             // Check if course limit is reached
             var existingCourses = await _courseRepository.GetAsync(c => c.CompanyId == company.Id);
@@ -243,6 +246,11 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             if (course is null) return NotFound();
             if (course.CompanyId != company.Id) return Forbid();
 
+            //renew subscription
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
+
             var instructor = _instructorRepository.GetOne(i => i.Id == request.InstructorId);
             if (instructor is null || instructor.CompanyId != company.Id)
                 return BadRequest("Instructor not found or does not belong to your company.");
@@ -285,6 +293,9 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company is null) return Unauthorized();
+            //renew
+            if (company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
 
             var course = _courseRepository.GetOne(c => c.Id == id);
             if (course is null) return NotFound();

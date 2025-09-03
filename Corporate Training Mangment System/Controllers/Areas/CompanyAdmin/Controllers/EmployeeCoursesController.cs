@@ -22,19 +22,23 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         private readonly IRepository<EmployeeCourse> _employeeCourseRepository;
         private readonly IRepository<Employee> _employeeRepository;
         private readonly IRepository<Course> _courseRepository;
+        private readonly IRepository<Company> _companyRepository;
 
         public EmployeeCoursesController(IRepository<EmployeeCourse> employeeCourseRepository,IRepository<Employee> employeeRepository,
-            IRepository<Course> courseRepository)
+            IRepository<Course> courseRepository,IRepository<Company>companyRepository)
         {
             _employeeCourseRepository = employeeCourseRepository;
             this._employeeRepository = employeeRepository;
             this._courseRepository = courseRepository;
+            this._companyRepository = companyRepository;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
+            if (company is null) return Unauthorized();
             var employeeCourses = await _employeeCourseRepository.GetAsync(
                 includes: [ec => ec.Course, ec => ec.Employee],
                 expression: ec => ec.Course.Company.ApplicationUserId == userId
@@ -47,6 +51,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         public async Task<IActionResult> GetById(int id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        
 
             var employeeCourse = (await _employeeCourseRepository.GetAsync(
                 expression: ec => ec.Id == id,
@@ -86,6 +92,10 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             if (course.Company?.ApplicationUserId != userId)
                 return Forbid("Only the company admin can assign students to this course.");
+            //for renew subscription
+            if(course.Company.EndDate< DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
 
             var alreadyAssigned = (await _employeeCourseRepository.GetAsync(
                 ec => ec.CourseId == request.CourseId && ec.EmployeeId == request.EmployeeId
@@ -114,6 +124,8 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         public async Task<IActionResult> Edit(int id, [FromBody] UpdateCourseEmployeeRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //
+            
 
             var employeeCourse = (await _employeeCourseRepository.GetAsync(
                 ec => ec.Id == id,
@@ -122,9 +134,13 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             if (employeeCourse == null)
                 return NotFound("Not found.");
-
+            // if company is owner
             if (employeeCourse.Course.Company.ApplicationUserId != userId)
                 return Forbid();
+            //for renew subscription
+            if (employeeCourse.Course.Company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
 
             employeeCourse.IsCompleted = request.IsCompleted;
             employeeCourse.CompletedAt = DateTime.UtcNow.AddDays(request.DeadlineDays);
@@ -138,6 +154,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+
             var employeeCourse = (await _employeeCourseRepository.GetAsync(
                 ec => ec.Id == id,
                 includes: [ec => ec.Course.Company]
@@ -145,9 +162,14 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             if (employeeCourse == null)
                 return NotFound("Not found.");
-
+            //owner of company
             if (employeeCourse.Course.Company.ApplicationUserId != userId)
                 return Forbid();
+
+            //for renew subscription
+            if (employeeCourse.Course.Company.EndDate < DateTime.Now)
+                return Ok("Your subscription has expired. Please renew your plan.");
+
 
             await _employeeCourseRepository.DeleteAsync(employeeCourse);
             return NoContent();

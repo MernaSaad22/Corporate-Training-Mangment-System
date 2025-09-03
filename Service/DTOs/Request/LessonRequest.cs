@@ -13,6 +13,7 @@ namespace Service.DTOs.Request
         public string Content { get; set; } = null!;
         public int ChapterId { get; set; }
         public IFormFile? VideoFile { get; set; }
+        public int Order { get; set; }
 
     }
 }

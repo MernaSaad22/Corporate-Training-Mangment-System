@@ -36,11 +36,12 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
         private readonly IRepository<EmployeeCourseProgress> _courseProgressRepo;
         private readonly IRepository<EmployeeLessonProgress> _lessonProgressRepo;
         private readonly IProgressService _progressService;
+        private readonly IRepository<EmployeeCourse> _employeecourseRepository;
 
         public EmployeesController(IRepository<EmployeeCourse> employeeCourseRepo, IRepository<Chapter> chapterRepository, IEmployeeRepository employeeRepository
             , IRepository<Course> courseRepository, IRepository<Lesson> lessonRepository,IRepository<Assignment> assignmentRepository, IRepository<EmployeeAssignment> employeeAssignmentRepository
             , IRepository<Exam> examRepository, IRepository<ExamSubmission> examSubmissionRepo, IRepository<EmployeeCourseProgress> courseProgressRepo,
-    IRepository<EmployeeLessonProgress> lessonProgressRepo, IProgressService progressService)
+    IRepository<EmployeeLessonProgress> lessonProgressRepo, IProgressService progressService, IRepository<EmployeeCourse>employeecourseRepository)
         {
             _employeeCourseRepo = employeeCourseRepo;
             _chapterRepository = chapterRepository;
@@ -54,6 +55,7 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             _courseProgressRepo = courseProgressRepo;
             _lessonProgressRepo = lessonProgressRepo;
             _progressService = progressService;
+            _employeecourseRepository = employeecourseRepository;
         }
         [HttpGet("my-courses")]
         public async Task<IActionResult> GetMyCourses()
@@ -168,7 +170,7 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
 
 
         [HttpGet("my-course/{id}")]
-        public async Task<IActionResult> GetMyCourse([FromRoute] int id)
+        public IActionResult GetMyCourse([FromRoute] int id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -311,6 +313,26 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             }
 
             await _progressService.UpdateEmployeeCourseProgress(employee.Id, lesson.Chapter.CourseId);
+
+
+
+            //if employee progress >=85% mark course as completed for this employee and CompletedAt<now this is the deadline for course created by company ==>EmployeeCourse 
+            var progress = _courseProgressRepo.GetOne(p =>
+    p.EmployeeId == employee.Id && p.CourseId == lesson.Chapter.CourseId);
+
+            if (progress is not null && progress.TotalProgress >= 85)
+            {
+                var employeeCourse = _employeeCourseRepo.GetOne(ec =>
+                    ec.EmployeeId == employee.Id && ec.CourseId == lesson.Chapter.CourseId);
+
+                if (employeeCourse is not null && !employeeCourse.IsCompleted && employeeCourse.CompletedAt< DateTime.UtcNow)
+                {
+                    employeeCourse.IsCompleted = true;
+                   
+
+                    await _employeeCourseRepo.EditAsync(employeeCourse);
+                }
+            }
 
             var response = lesson.Adapt<LessonInChapter>(); 
             return Ok(response);
@@ -479,7 +501,54 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
         }
 
 
-        [HttpGet("exam/{examid}")] 
+        //[HttpGet("exam/{examid}")] 
+        //public IActionResult GetExamByIdForEmployee([FromRoute] int examid)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(userId))
+        //        return Unauthorized();
+
+        //    var employee = _employeeRepository.GetOne(e => e.ApplicationUserId == userId);
+        //    if (employee == null)
+        //        return NotFound("Employee not found");
+
+
+        //    var exam = _examRepository.GetOne(
+        //        e => e.Id == examid,
+        //        includes: new Expression<Func<Exam, object>>[] { e => e.Questions, e => e.Chapter, e => e.Chapter.Course });
+
+        //    if (exam == null)
+        //        return NotFound("Exam not found");
+
+        //    if (exam.Deadline < DateTime.UtcNow)
+        //    {
+        //        return Ok("The exam deadline has passed. You can no longer view the exam.");
+        //    }
+
+        //    var response = new ExamEmployeeResponse
+        //    {
+        //        Id = exam.Id,
+        //        Title = exam.Title,
+        //        Deadline = exam.Deadline,
+        //        TotalQuestions = exam.Questions?.Count ?? 0,
+        //        Questions = exam.Questions.Select(q => new QuestionEmployeeResponse
+        //        {
+        //            Id = q.Id,
+        //            Text = q.Text,
+        //            OptionA = q.OptionA,
+        //            OptionB = q.OptionB,
+        //            OptionC = q.OptionC,
+        //            OptionD = q.OptionD
+        //        }).ToList()
+        //    };
+
+        //    return Ok(response);
+        //}
+
+
+
+
+        [HttpGet("exam/{examid}")]
         public IActionResult GetExamByIdForEmployee([FromRoute] int examid)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -490,13 +559,29 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             if (employee == null)
                 return NotFound("Employee not found");
 
-            
             var exam = _examRepository.GetOne(
                 e => e.Id == examid,
                 includes: new Expression<Func<Exam, object>>[] { e => e.Questions, e => e.Chapter, e => e.Chapter.Course });
 
             if (exam == null)
                 return NotFound("Exam not found");
+
+            // ✅ Constrain: Ensure employee is enrolled in the course containing this exam
+            with:
+
+            var enrollment = _employeecourseRepository.GetOne(ec =>
+                ec.EmployeeId == employee.Id &&
+                ec.CourseId == exam.Chapter.CourseId);
+
+            if (enrollment == null)
+            {
+                return Ok("You are not enrolled in the course for this exam.");
+            }
+
+            if (exam.Deadline < DateTime.UtcNow)
+            {
+                return Ok("The exam deadline has passed. You can no longer view the exam.");
+            }
 
             var response = new ExamEmployeeResponse
             {
@@ -517,6 +602,7 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
 
             return Ok(response);
         }
+
 
 
 
@@ -544,7 +630,7 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
 
 
 
-
+        //MY WORKED CODE
 
         [HttpPost("submit-exam/{examId}")]
         public async Task<IActionResult> SubmitExam([FromRoute] int examId, [FromBody] ExamSubmissionRequest request)
@@ -555,31 +641,36 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
             var employee = _employeeRepository.GetOne(e => e.ApplicationUserId == userId);
             if (employee is null) return Unauthorized();
 
-     
-            var existingSubmission =  _examSubmissionRepo.GetOne(
+
+            var existingSubmission = _examSubmissionRepo.GetOne(
                 es => es.ExamId == examId && es.EmployeeId == employee.Id
             );
 
             if (existingSubmission != null)
                 return BadRequest("You have already submitted this exam.");
 
-        
+
             var exam = _examRepository.GetOne(
-                e => e.Id == examId,
-                includes: [e => e.Questions]
-            );
+      e => e.Id == examId,
+      includes: [e => e.Questions, e => e.Chapter] // ✅ FIXED
+  );
+           
+
 
             if (exam == null)
                 return NotFound("Exam not found");
 
-            
+            if (exam.Chapter == null)
+                return Ok("Exam is not linked to a chapter.");
+
+
             int correctCount = 0;
             var questionAnswers = new List<QuestionAnswer>();
 
             foreach (var submitted in request.Answers)
             {
                 var question = exam.Questions.FirstOrDefault(q => q.Id == submitted.QuestionId);
-                if (question == null) continue; 
+                if (question == null) continue;
 
                 var isCorrect = string.Equals(
                     submitted.SelectedAnswer?.Trim(),
@@ -592,7 +683,7 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
                 questionAnswers.Add(new QuestionAnswer
                 {
                     QuestionId = question.Id,
-                   Answer = submitted.SelectedAnswer,
+                    Answer = submitted.SelectedAnswer,
                 });
             }
 
@@ -616,6 +707,103 @@ namespace Corporate_Training_Mangment_System.Controllers.EmployeesCompany.Contro
                 CorrectAnswers = correctCount
             });
         }
+
+
+
+        //    [HttpPost("submit-exam/{examId}")]
+        //    public async Task<IActionResult> SubmitExam([FromRoute] int examId, [FromBody] ExamSubmissionRequest request)
+        //    {
+        //        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //        if (userId is null) return Unauthorized();
+
+        //        var employee = _employeeRepository.GetOne(e => e.ApplicationUserId == userId);
+        //        if (employee is null) return Unauthorized();
+
+
+        //        var existingSubmission =  _examSubmissionRepo.GetOne(
+        //            es => es.ExamId == examId && es.EmployeeId == employee.Id
+        //        );
+
+        //        if (existingSubmission != null)
+        //            return BadRequest("You have already submitted this exam.");
+
+
+        //        var exam = _examRepository.GetOne(
+        //            e => e.Id == examId,
+        //            includes: [e => e.Questions]
+        //        );
+
+        //        if (exam == null)
+        //            return NotFound("Exam not found");
+        //        //
+        //        if (exam.Deadline < DateTime.UtcNow)
+        //        {
+        //            return Ok("The exam deadline has passed. You can no longer submit your answers.");
+        //        }
+
+        //        int correctCount = 0;
+        //        var questionAnswers = new List<QuestionAnswer>();
+
+        //        foreach (var submitted in request.Answers)
+        //        {
+        //            var question = exam.Questions.FirstOrDefault(q => q.Id == submitted.QuestionId);
+        //            if (question == null) continue; 
+
+        //            var isCorrect = string.Equals(
+        //                submitted.SelectedAnswer?.Trim(),
+        //                question.Answer?.Trim(),
+        //                StringComparison.OrdinalIgnoreCase
+        //            );
+
+        //            if (isCorrect) correctCount++;
+
+        //            questionAnswers.Add(new QuestionAnswer
+        //            {
+        //                QuestionId = question.Id,
+        //               Answer = submitted.SelectedAnswer,
+        //            });
+        //        }
+
+        //        var submission = new ExamSubmission
+        //        {
+        //            ExamId = examId,
+        //            EmployeeId = employee.Id,
+        //            SubmittedAt = DateTime.UtcNow,
+        //            Grade = Math.Round((decimal)correctCount / exam.Questions.Count * 100, 2), // Grade as percentage
+        //            QuestionAnswers = questionAnswers
+        //        };
+
+        //        await _examSubmissionRepo.CreateAsync(submission);
+
+        //        await _progressService.UpdateEmployeeCourseProgress(employee.Id, exam.Chapter.CourseId);
+
+        //        //if employee progress >=85% mark course as completed for this employee ==>EmployeeCourse 
+        //        var progress = _courseProgressRepo.GetOne(p =>
+        //p.EmployeeId == employee.Id && p.CourseId == exam.Chapter.CourseId);
+
+        //        if (progress is not null && progress.TotalProgress >= 85)
+        //        {
+        //            var employeeCourse = _employeeCourseRepo.GetOne(ec =>
+        //                ec.EmployeeId == employee.Id && ec.CourseId == exam.Chapter.CourseId);
+
+        //            if (!employeeCourse.IsCompleted && employeeCourse.CompletedAt > DateTime.UtcNow)
+        //            {
+        //                employeeCourse.IsCompleted = true;
+
+
+        //                await _employeeCourseRepo.EditAsync(employeeCourse);
+        //            }
+        //        }
+
+
+        //        return Ok(new
+        //        {
+        //            Message = "Exam submitted successfully.",
+        //            Grade = submission.Grade,
+        //            TotalQuestions = exam.Questions.Count,
+        //            CorrectAnswers = correctCount
+        //        });
+        //    }
 
 
 
