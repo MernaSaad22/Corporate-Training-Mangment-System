@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Service.DTOs.Request;
 using Service.DTOs.Response;
 using System.Security.Claims;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Controllers
 {
@@ -92,8 +93,15 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             if (course.Company?.ApplicationUserId != userId)
                 return Forbid("Only the company admin can assign students to this course.");
+
+            //if company can login but not buy a plan
+            if (course.Company.EndDate == null && course.Company.StartDate == null)
+                return Ok("Please finish your payment");
+
+
+
             //for renew subscription
-            if(course.Company.EndDate< DateTime.Now)
+            if (course.Company.EndDate< DateTime.Now)
                 return Ok("Your subscription has expired. Please renew your plan.");
 
 

@@ -22,7 +22,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
         {
             _planRepository = planRepository;
         }
-
+        [AllowAnonymous]
         [HttpGet("")]
         public async Task<ActionResult<IEnumerable<PlanResponse>>> GetAll()
         {
@@ -32,7 +32,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
             var config = new TypeAdapterConfig();
             return Ok(plans.Adapt<IEnumerable<PlanResponse>>());
         }
-
+        //[AllowAnonymous]
         [HttpGet("{id}")]
         public IActionResult GetOne([FromRoute] int id)
         {
@@ -43,6 +43,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.Admin.Controllers
 
             return NotFound();
         }
+       // [Authorize(Roles = "SuperAdmin")]
         [HttpPost("")]
 
         public async Task<IActionResult> Create([FromBody] PlanRequest planRequest)

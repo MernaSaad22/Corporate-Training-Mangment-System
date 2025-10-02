@@ -118,6 +118,12 @@ namespace Corporate_Training_Mangment_System
             //add this line to make me test CoursesController
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
+
+            builder.Services.Configure<StripeSettings>(
+    builder.Configuration.GetSection("Stripe"));
+
+            Stripe.StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+
             builder.Services.AddTransient<IEmailSender, EmailSender>();
 
             var config = TypeAdapterConfig.GlobalSettings;

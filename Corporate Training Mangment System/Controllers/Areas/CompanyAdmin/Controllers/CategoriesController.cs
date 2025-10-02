@@ -162,6 +162,12 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             var company = _companyRepository.GetOne(c => c.ApplicationUserId == userId);
             if (company == null)
                 return Unauthorized();
+
+            //if company can login but not buy a plan
+            if (company.EndDate == null && company.StartDate == null)
+                return Ok("Please finish your payment");
+
+
             //
             if (company.EndDate < DateTime.Now)
                 return Ok("Your subscription has expired. Please renew your plan.");
@@ -173,7 +179,18 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             if (createdCategory != null)
             {
-                return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Categories/{createdCategory.Id}", createdCategory);
+
+                // return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Categories/{createdCategory.Id}", createdCategory);
+
+                var response = new CourseCategoryCreatedbyCompanyResponse
+                {
+                    Id = createdCategory.Id,
+                    Name = createdCategory.Name,
+                    CompanyId = company.Id,
+                    CompanyName = company.Name
+                };
+
+                return Created($"{Request.Scheme}://{Request.Host}/api/CompanyAdmin/Categories/{createdCategory.Id}", response);
             }
             return BadRequest();
         }

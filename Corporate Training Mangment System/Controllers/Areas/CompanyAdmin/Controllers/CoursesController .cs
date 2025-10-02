@@ -175,6 +175,12 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
                 includes: new Expression<Func<Company, object>>[] { c => c.Plan });
 
             if (company is null) return Unauthorized();
+
+
+            //if company can login but not buy a plan
+            if (company.EndDate == null && company.StartDate == null)
+                return Ok("Please finish your payment");
+
             //renew subscription
             if (company.EndDate < DateTime.Now)
                 return Ok("Your subscription has expired. Please renew your plan.");

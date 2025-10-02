@@ -1,3 +1,4 @@
+using DataAccess.IRepository;
 using Entities;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
@@ -29,48 +30,100 @@ namespace Corporate_Training_Mangment_System.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailSender _emailSender;
-
-        public AccountsController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IEmailSender emailSender, RoleManager<IdentityRole> roleManager)
+        private readonly IRepository<Company> _companyRepository;
+        public AccountsController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IEmailSender emailSender, RoleManager<IdentityRole> roleManager,IRepository<Company>companyRepository)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
+            _companyRepository = companyRepository;
         }
 
 
-        [HttpPost("Register")]
-        public async Task<IActionResult> Register(RegisterRequest registerRequest)
+
+        [HttpPost("RegisterCompany")]
+        public async Task<IActionResult> RegisterCompany(RegisterCompanyRequest registerCompanyRequest)
         {
+            // Map RegisterRequest to ApplicationUser
+            ApplicationUser applicationUser = registerCompanyRequest.Adapt<ApplicationUser>();
 
-
-
-            ApplicationUser applicationUser = registerRequest.Adapt<ApplicationUser>();
-
-            var result = await _userManager.CreateAsync(applicationUser, registerRequest.Password);
+            var result = await _userManager.CreateAsync(applicationUser, registerCompanyRequest.Password);
 
             if (result.Succeeded)
             {
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
 
-                var confirmationLink = Url.Action("ConfirmEmail", "Accounts", new { area = "Identity", userId = applicationUser.Id, token }, Request.Scheme);
+                var confirmationLink = Url.Action("ConfirmEmail", "Accounts", new
+                {
+                    area = "Identity",
+                    userId = applicationUser.Id,
+                    token
+                }, Request.Scheme);
 
-                await _emailSender.SendEmailAsync(registerRequest.Email, "Confirmation Your Account", $"Please Confirm Your Account By Clicking <a href='{confirmationLink}'>Here</a>");
+                await _emailSender.SendEmailAsync(
+                    registerCompanyRequest.Email,
+                    "Confirm Your Account",
+                    $"Please confirm your account by clicking <a href='{confirmationLink}'>here</a>");
 
-                //until we add a payment way
+                // Assign role
                 await _userManager.AddToRoleAsync(applicationUser, SD.CompanyAdmin);
 
-                return Created();
+                // ? Create the company with PlanId but null Start/EndDate
+                var company = new Company
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = registerCompanyRequest.CompanyName,
+                    PlanId = registerCompanyRequest.PlanId,
+                    ApplicationUserId = applicationUser.Id,
+                    StartDate = null,
+                    EndDate = null,
+                    Logo = null // Add logic if you allow logo upload during register
+                };
+
+                await _companyRepository.CreateAsync(company);
+
+                return Created(); // Or return the company info
             }
-            else
-            {
 
-                return BadRequest(result.Errors);
-
-
-
-            }
+            return BadRequest(result.Errors);
         }
+
+
+
+
+        //[HttpPost("Register")]
+        //public async Task<IActionResult> Register(RegisterRequest registerRequest)
+        //{
+
+
+
+        //    ApplicationUser applicationUser = registerRequest.Adapt<ApplicationUser>();
+
+        //    var result = await _userManager.CreateAsync(applicationUser, registerRequest.Password);
+
+        //    if (result.Succeeded)
+        //    {
+        //        var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+
+        //        var confirmationLink = Url.Action("ConfirmEmail", "Accounts", new { area = "Identity", userId = applicationUser.Id, token }, Request.Scheme);
+
+        //        await _emailSender.SendEmailAsync(registerRequest.Email, "Confirmation Your Account", $"Please Confirm Your Account By Clicking <a href='{confirmationLink}'>Here</a>");
+
+        //        //until we add a payment way
+        //        await _userManager.AddToRoleAsync(applicationUser, SD.CompanyAdmin);
+
+        //        return Created();
+        //    }
+        //    else
+        //    {
+
+        //        return BadRequest(result.Errors);
+
+
+
+        //    }
+        //}
 
 
         [HttpPost("RegisterInstructor")]

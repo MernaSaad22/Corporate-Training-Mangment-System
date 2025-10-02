@@ -17,7 +17,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
     [Route("api/[area]/[controller]")]
     [ApiController]
     [Authorize(Roles = "CompanyAdmin")]
-
+    
     public class EmployeesController : ControllerBase
     {
         private readonly IRepository<Employee> _employeeRepository;
@@ -36,7 +36,7 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
             _courseRepository = courseRepository;
         }
 
-        
+       
         [HttpGet("my-employees")]
         public async Task<ActionResult<IEnumerable<EmployeeResponse>>> GetByCompany()
         {
@@ -142,6 +142,12 @@ namespace Corporate_Training_Mangment_System.Controllers.Areas.CompanyAdmin.Cont
 
             if (company is null)
                 return Unauthorized("Company not found for this user.");
+
+            //if company can login but not buy a plan
+            if (company.EndDate == null && company.StartDate == null)
+                return Ok("Please finish your payment");
+
+
             //renew subscription
             if (company.EndDate < DateTime.Now)
                 return Ok("Your subscription has expired. Please renew your plan.");
